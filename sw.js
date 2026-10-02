@@ -1,5 +1,5 @@
 // Offline cache for the Weekly Budget Planner. Bump VERSION to ship an update.
-const VERSION='budget-v1';
+const VERSION='budget-v2';
 const SHELL=['./','index.html','manifest.webmanifest','icon-180.png','icon-192.png','icon-512.png'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(VERSION).then(c=>c.addAll(SHELL)).then(()=>self.skipWaiting()))});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==VERSION&&k!=='budget-fonts').map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});

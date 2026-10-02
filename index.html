@@ -266,6 +266,7 @@ button,input,select{font:inherit;color:inherit}
 .toast button{border:0;background:transparent;color:var(--accent-soft);font-weight:700;cursor:pointer;padding:6px 8px}
 @media (max-width:640px){.toast{bottom:calc(84px + env(safe-area-inset-bottom, 0px))}.qchip{min-height:44px}}
 /* data panel */
+.warnnote{border-color:var(--warn);background:color-mix(in srgb,var(--warn) 12%,transparent)}
 .databtns{display:flex;gap:8px;flex-wrap:wrap}
 .datatext{font-family:var(--f-num);font-size:.78rem;resize:vertical;min-height:80px}
 .filebtn{display:inline-flex;align-items:center;cursor:pointer}
@@ -401,6 +402,7 @@ button,input,select{font:inherit;color:inherit}
 </style>
 
 <div class="wrap">
+  <div class="note warnnote" id="safariNote" hidden><p><b>You’re in Safari, not the Budget app.</b> Anything you add here stays in Safari and won’t show in the app on your Home Screen. Tap Share, then Add to Home Screen, and use that instead.</p></div>
   <header class="top">
     <div class="brand"><i></i>Weekly Budget Planner</div>
     <div class="seg" role="group" aria-label="View"><button type="button" id="vWeek" aria-pressed="true">Week</button><button type="button" id="vMonth" aria-pressed="false">Month</button><button type="button" id="vReg" aria-pressed="false">Regular</button><button type="button" id="vDebt" aria-pressed="false">Debt</button><button type="button" id="vSave" aria-pressed="false">Savings</button></div>
@@ -1622,6 +1624,10 @@ function exportJSON(){return JSON.stringify({app:'weekly-budget',v:1,exported:ne
 function dMsg(t,bad){const m=$('dMsg');m.textContent=t;m.hidden=false;m.style.color=bad?'var(--bad)':'var(--good)'}
 $('dataHint').textContent=IS_APP?'Your budget is saved on this phone only. Save a backup now and then, so you don’t lose it if you change phone.':'Moving to the offline app? Tap Copy my data, then paste it into Your data in the app and tap Import.';
 $('dSave').hidden=!IS_APP;$('dFileLbl').hidden=!IS_APP;
+// On iPhone, the Home Screen app and Safari keep separate data: warn when opened in a Safari tab
+(function(){if(!IS_APP)return;const standalone=window.navigator.standalone===true||(window.matchMedia&&matchMedia('(display-mode: standalone)').matches);
+  const ios=/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+  if(ios&&!standalone)$('safariNote').hidden=false})();
 $('dCopy').addEventListener('click',()=>{
   const txt=exportJSON(),out=$('dOut');
   const fallback=()=>{out.hidden=false;out.value=txt;out.focus();out.select();dMsg('Couldn’t copy automatically. The text above is selected: copy it from there.')};
