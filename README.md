@@ -13,3 +13,5 @@ An offline budget planner that installs to an iPhone Home Screen.
 
 ## Updating
 Edit the files and push to `main`. Bump `VERSION` in `sw.js` so installed copies pick up the change the next time they open with a connection.
+
+Live at https://callumtricker.github.io/budget-planner/
