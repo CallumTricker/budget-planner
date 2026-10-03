@@ -265,6 +265,17 @@ button,input,select{font:inherit;color:inherit}
 .toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom, 0px));transform:translateX(-50%);z-index:30;background:var(--ink);color:var(--bg);border-radius:12px;padding:10px 12px 10px 16px;display:flex;gap:14px;align-items:center;font-size:.9rem;box-shadow:0 6px 24px rgba(0,0,0,.25);max-width:calc(100vw - 32px);width:max-content}
 .toast button{border:0;background:transparent;color:var(--accent-soft);font-weight:700;cursor:pointer;padding:6px 8px}
 @media (max-width:640px){.toast{bottom:calc(84px + env(safe-area-inset-bottom, 0px))}.qchip{min-height:44px}}
+/* year view */
+.ymonths{display:flex;flex-direction:column;gap:4px}
+.ygap{font-size:.84rem;color:var(--muted);padding:8px 6px;border:1px dashed var(--line);border-radius:8px}
+.yrow{grid-template-columns:5.5rem minmax(0,1fr) 7.5rem}
+.yrow .hv{text-align:right}
+.ytrack{position:relative;height:14px;background:var(--track);border-radius:4px;overflow:hidden}
+.ytrack i{position:absolute;top:0;bottom:0;left:0;display:block}
+.ytrack .yout{background:var(--accent)}
+.ytrack .yspare{background:var(--good)}
+.ytrack .yover{background:var(--bad)}
+@media (max-width:560px){.yrow{grid-template-columns:4.2rem minmax(0,1fr)}.yrow .hv{grid-column:2;text-align:left}}
 /* data panel */
 .warnnote{border-color:var(--warn);background:color-mix(in srgb,var(--warn) 12%,transparent)}
 .databtns{display:flex;gap:8px;flex-wrap:wrap}
@@ -353,7 +364,7 @@ button,input,select{font:inherit;color:inherit}
   .top{gap:8px}
   .top .brand{font-size:1rem}
   .seg{position:fixed;left:0;right:0;bottom:0;z-index:20;border-radius:0;border:0;border-top:1px solid var(--line);padding:6px 8px calc(6px + env(safe-area-inset-bottom, 0px));gap:4px;background:color-mix(in srgb,var(--surface) 94%,transparent);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
-  .seg button{flex:1;min-height:48px;border-radius:12px;font-size:.8rem;padding:5px 2px}
+  .seg button{flex:1;min-height:48px;border-radius:12px;font-size:.74rem;padding:5px 0;min-width:0}
   .themebtn{padding:8px 12px;min-height:40px}
   .status{order:3;width:100%;font-size:.76rem}
   /* compact week / month header */
@@ -361,10 +372,10 @@ button,input,select{font:inherit;color:inherit}
   .weekbar .title{grid-column:2;grid-row:1;text-align:center}
   .weekbar h1{font-size:1.3rem;letter-spacing:-.02em}
   .weekbar .eyebrow{font-size:.66rem}
-  .weekbar #prev,.weekbar #mPrev{grid-column:1;grid-row:1}
-  .weekbar #next,.weekbar #mNext{grid-column:3;grid-row:1}
-  .weekbar #today,.weekbar #mToday{grid-column:2;grid-row:2;justify-self:center;padding:6px 14px}
-  .weekbar #today[disabled],.weekbar #mToday[disabled]{display:none}
+  .weekbar #prev,.weekbar #mPrev,.weekbar #yPrev{grid-column:1;grid-row:1}
+  .weekbar #next,.weekbar #mNext,.weekbar #yNext{grid-column:3;grid-row:1}
+  .weekbar #today,.weekbar #mToday,.weekbar #yToday{grid-column:2;grid-row:2;justify-self:center;padding:6px 14px}
+  .weekbar #today[disabled],.weekbar #mToday[disabled],.weekbar #yToday[disabled]{display:none}
   #regView .weekbar,#debtView .weekbar{display:block}
   #regView .weekbar .title,#debtView .weekbar .title{text-align:left}
   .navbtn{width:44px;height:44px}
@@ -405,7 +416,7 @@ button,input,select{font:inherit;color:inherit}
   <div class="note warnnote" id="safariNote" hidden><p><b>You’re in Safari, not the Budget app.</b> Anything you add here stays in Safari and won’t show in the app on your Home Screen. Tap Share, then Add to Home Screen, and use that instead.</p></div>
   <header class="top">
     <div class="brand"><i></i>Weekly Budget Planner</div>
-    <div class="seg" role="group" aria-label="View"><button type="button" id="vWeek" aria-pressed="true">Week</button><button type="button" id="vMonth" aria-pressed="false">Month</button><button type="button" id="vReg" aria-pressed="false">Regular</button><button type="button" id="vDebt" aria-pressed="false">Debt</button><button type="button" id="vSave" aria-pressed="false">Savings</button></div>
+    <div class="seg" role="group" aria-label="View"><button type="button" id="vWeek" aria-pressed="true">Week</button><button type="button" id="vMonth" aria-pressed="false">Month</button><button type="button" id="vYear" aria-pressed="false">Year</button><button type="button" id="vReg" aria-pressed="false">Regular</button><button type="button" id="vDebt" aria-pressed="false">Debt</button><button type="button" id="vSave" aria-pressed="false">Savings</button></div>
     <button type="button" class="themebtn" id="themeBtn" aria-label="Switch to dark mode"><svg id="themeIco" viewBox="0 0 24 24" aria-hidden="true"></svg><span id="themeTxt">Dark</span></button>
     <div class="status" id="status" data-k="loading" role="status">Loading saved budget…</div>
     <div class="toast" id="toast" role="status" hidden><span id="toastText"></span><button type="button" id="toastUndo">Undo</button></div>
@@ -551,6 +562,44 @@ button,input,select{font:inherit;color:inherit}
       <div class="rows mcats" id="moCats"></div>
     </section>
     <p class="foot" id="moFoot"></p>
+  </div>
+
+  <!-- YEAR -->
+  <div class="views" id="yearView" hidden>
+    <section class="weekbar" aria-label="Choose year">
+      <button class="navbtn" id="yPrev" aria-label="Previous year">‹</button>
+      <div class="title">
+        <div class="eyebrow">Year overview</div>
+        <h1 id="yTitle">2026</h1>
+        <div class="muted" id="yRange"></div>
+      </div>
+      <button class="ghost" id="yToday">This year</button>
+      <button class="navbtn" id="yNext" aria-label="Next year">›</button>
+    </section>
+    <div class="note" id="yNote" hidden><p id="yNoteText"></p></div>
+    <section class="summary" aria-label="Year summary">
+      <div>
+        <div class="eyebrow" id="yBigLbl">Spare this year</div>
+        <div class="big" id="yBig">£0.00</div>
+        <div class="leftsub" id="yBigSub"></div>
+      </div>
+      <dl class="stats">
+        <div><dt>Coming in</dt><dd id="yIn">£0.00</dd></div>
+        <div><dt>Going out</dt><dd id="yOut">£0.00</dd></div>
+        <div><dt>Saved</dt><dd id="ySaved">£0.00</dd></div>
+        <div><dt>Debt paid</dt><dd id="yDebt">£0.00</dd></div>
+      </dl>
+    </section>
+    <section class="panel" aria-labelledby="hYMonths">
+      <h2 id="hYMonths">Month by month <small>in vs out</small></h2>
+      <div class="ymonths" id="yMonths"></div>
+      <div class="legend"><span><b style="background:var(--accent)"></b>Going out</span><span><b style="background:var(--good)"></b>Spare</span><span><b style="background:var(--bad)"></b>Over</span></div>
+    </section>
+    <div class="grid">
+      <section class="panel" aria-labelledby="hYTypes"><h2 id="hYTypes">Where it goes</h2><div class="rows" id="yTypes"></div></section>
+      <section class="panel" aria-labelledby="hYTop"><h2 id="hYTop">Biggest costs <small>for the year</small></h2><div class="rows" id="yTop"></div></section>
+    </div>
+    <p class="foot" id="yFoot"></p>
   </div>
 
   <!-- DEBT -->
@@ -1174,6 +1223,96 @@ function renderMonth(){
     md.starts.map(s=>parseIso(s).getDate()).join(', ').replace(/, (\d+)$/,' and $1')+' '+mname+', so it runs from '+dshort(startDs)+' to '+dshort(endDs)+'.';
 }
 
+/* ---------- year view ---------- */
+let curYear=null;
+const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function yearData(y){
+  const out={y,months:[],types:{bill:0,saving:0,debt:0,budget:0,oneoff:0},income:0,out:0,spent:0,savedTicked:0,debtTicked:0,savedPlan:0,debtPlan:0,cats:{},tracked:0,pastSpent:0};
+  const add=(nm,p,typ)=>{if(!out.cats[nm])out.cats[nm]={p:0,type:typ};out.cats[nm].p+=p};
+  for(let mo=0;mo<12;mo++){
+    const ym=y+'-'+String(mo+1).padStart(2,'0'),starts=monthStarts(ym);
+    let inc=0,pl=0,sp=0,has=false;
+    starts.forEach(ws=>{
+      const m=model(ws),t=totals(m);
+      const cInc=m.inc.filter(i=>i.carry).reduce((a,i)=>a+i.p,0);
+      if(m.inc.length||m.autos.length||m.budgets.length||m.cats.length||weeks[key(ws)])has=true;
+      inc+=t.income-cInc;pl+=t.planned;sp+=t.spent;
+      m.autos.forEach(a=>{const ty=a.type==='saving'?'saving':a.type==='debt'?'debt':'bill';out.types[ty]+=a.p;add(a.carry?(a.name.replace(' (left over)','')):a.name,a.p,ty);
+        if(a.type==='saving'){out.savedPlan+=a.p;if(a.paid)out.savedTicked+=a.p}
+        if(a.type==='debt'){out.debtPlan+=a.p;if(a.paid)out.debtTicked+=a.p}});
+      m.budgets.forEach(b=>{out.types.budget+=b.p;add(b.name,b.p,'budget')});
+      m.cats.forEach(c=>{out.types.oneoff+=c.p||0;add(c.name||'One-off',c.p||0,'oneoff')});
+      // spending beyond a category's plan still counts as going out
+      const extra=Math.max(0,t.spent-t.planned);if(extra)out.types.oneoff+=0;
+    });
+    if(has)out.tracked++;
+    out.income+=inc;out.out+=Math.max(pl,sp);out.spent+=sp;
+    out.months.push({ym,mo,inc,out:Math.max(pl,sp),planned:pl,spent:sp,has,weeks:starts.length});
+  }
+  return out;
+}
+function renderYear(){
+  if(curYear==null)curYear=parseIso(cur).getFullYear();
+  const d=yearData(curYear),fy=parseIso(firstWeek()).getFullYear();
+  $('yTitle').textContent=String(curYear);
+  const trackedMonths=d.months.filter(m=>m.has);
+  $('yRange').textContent=d.tracked?(d.tracked===12?'All 12 months':trackedMonths.length+' months tracked: '+MONTHS[trackedMonths[0].mo]+' – '+MONTHS[trackedMonths[trackedMonths.length-1].mo]):'Nothing planned this year';
+  $('yToday').disabled=curYear===fy;
+  const thisYear=new Date().getFullYear();
+  $('yNote').hidden=!(d.tracked&&d.tracked<12);
+  $('yNoteText').textContent=curYear<=thisYear&&settings.since&&parseIso(settings.since).getFullYear()===curYear?'Your planner started in '+MONTHS[parseIso(settings.since).getMonth()]+', so this year only covers the months since then.':'Only months with something planned are counted.';
+  const spare=d.income-d.out;
+  $('yBigLbl').textContent=curYear<thisYear?'Spare that year':curYear>thisYear?'Spare, if it goes to plan':'Spare this year';
+  $('yBig').textContent=fmt(Math.round(spare));$('yBig').classList.toggle('neg',spare<0);
+  const debtNote=d.types.debt?' Most of what’s left over each week goes to your debts, so this stays low on purpose.':'';
+  $('yBigSub').textContent=d.tracked?(spare<0?fmt(-Math.round(spare))+' more going out than coming in.':'What’s not planned for anything.')+debtNote:'Add regular payments to see the year.';
+  $('yIn').textContent=fmt(Math.round(d.income));$('yOut').textContent=fmt(Math.round(d.out));
+  $('ySaved').textContent=fmt(Math.round(d.savedPlan));$('yDebt').textContent=fmt(Math.round(d.debtPlan));
+
+  // month rows
+  const box=$('yMonths');box.textContent='';
+  const mx=Math.max(1,...d.months.map(m=>Math.max(m.inc,m.out)));
+  const nowYm=ymOf(parseIso(firstWeek()));
+  // fold a run of untracked months into one line
+  const firstHas=d.months.findIndex(m=>m.has),lastHas=d.months.length-1-[...d.months].reverse().findIndex(m=>m.has);
+  const gap=(a,b)=>box.appendChild(el('div',{cls:'ygap',text:(a===b?MONTHS[a]:MONTHS[a]+' – '+MONTHS[b])+': not tracked'}));
+  if(firstHas>0)gap(0,firstHas-1);
+  d.months.forEach(m=>{
+    if(firstHas<0||m.mo<firstHas||m.mo>lastHas)return;
+    const over=m.out>m.inc&&m.inc>0;
+    const tr=el('div',{cls:'ytrack'});
+    if(m.has){
+      tr.appendChild(el('i',{cls:'yout'+(over?' over':''),style:'width:'+(Math.min(m.out,m.inc||m.out)/mx*100).toFixed(1)+'%'}));
+      if(over)tr.appendChild(el('i',{cls:'yover',style:'left:'+(m.inc/mx*100).toFixed(1)+'%;width:'+((m.out-m.inc)/mx*100).toFixed(1)+'%'}));
+      else if(m.inc>m.out)tr.appendChild(el('i',{cls:'yspare',style:'left:'+(m.out/mx*100).toFixed(1)+'%;width:'+((m.inc-m.out)/mx*100).toFixed(1)+'%'}));
+    }
+    const lbl=el('span',{cls:'wk'},[MONTHS[m.mo],el('small',{text:m.has?m.weeks+' weeks':'not tracked'})]);
+    const val=el('span',{cls:'hv',text:m.has?fmt(Math.abs(Math.round(m.inc-m.out)))+(m.inc>=m.out?' spare':' over'):'–'});
+    const b=el('button',{type:'button',cls:'hrow yrow'+(m.ym===nowYm?' cur':''),'aria-label':MONTHS[m.mo]+' '+curYear+(m.has?': '+fmt(Math.round(m.inc))+' in, '+fmt(Math.round(m.out))+' out':', not tracked')},[lbl,tr,val]);
+    b.addEventListener('click',()=>{setView('month');curMonth=m.ym;renderMonth()});
+    box.appendChild(b);
+  });
+  if(firstHas<0)gap(0,11);else if(lastHas<11)gap(lastHas+1,11);
+
+  // where it goes
+  const tb=$('yTypes');tb.textContent='';
+  const TY=[['bill','Bills'],['budget','Spending budgets'],['saving','Savings'],['debt','Debt payments'],['oneoff','One-offs']];
+  const tot=Math.max(1,TY.reduce((a,[k])=>a+d.types[k],0));
+  TY.forEach(([k,label])=>{const v=d.types[k];if(!v)return;
+    tb.appendChild(el('div',{cls:'mcat'},[el('span',{cls:'nm',text:label}),el('span',{cls:'v',text:fmt(Math.round(v))+' · '+Math.round(v/tot*100)+'%'}),el('div',{cls:'bar'},[el('i',{style:'width:'+(v/tot*100).toFixed(1)+'%'})])]))});
+  if(!tb.children.length)tb.appendChild(el('div',{cls:'empty',text:'Nothing planned this year.'}));
+
+  // biggest costs
+  const tp=$('yTop');tp.textContent='';
+  const list=Object.entries(d.cats).filter(([,c])=>c.p>0).sort((a,b)=>b[1].p-a[1].p).slice(0,8);
+  const topMax=Math.max(1,...list.map(([,c])=>c.p));
+  const tyName={bill:'Bill',budget:'Budget',saving:'Saving',debt:'Debt',oneoff:'One-off'};
+  list.forEach(([nm,c])=>tp.appendChild(el('div',{cls:'mcat'},[el('span',{cls:'nm'},[nm,el('small',{cls:'muted',style:'margin-left:6px;font-size:.74rem',text:tyName[c.type]})]),el('span',{cls:'v',text:fmt(Math.round(c.p))}),el('div',{cls:'bar'},[el('i',{style:'width:'+(c.p/topMax*100).toFixed(1)+'%'})])])));
+  if(!list.length)tp.appendChild(el('div',{cls:'empty',text:'Nothing planned this year.'}));
+
+  $('yFoot').textContent='Each month is made of the weeks whose Friday falls in it. Past weeks use what you actually spent and ticked off; weeks ahead use your plan, including what’s forecast to go to your debts.';
+}
+
 /* ---------- regular payments view ---------- */
 const GROUPS=[
   {type:'income',title:'Income',hint:'Money coming in, like your wages.',add:'+ Add income'},
@@ -1521,17 +1660,18 @@ function drawSaveChart(){
 function setView(v){
   if(viewMode!==v)window.scrollTo(0,0);
   viewMode=v;
-  $('weekView').hidden=v!=='week';$('monthView').hidden=v!=='month';$('regView').hidden=v!=='regular';$('debtView').hidden=v!=='debt';$('saveView').hidden=v!=='savings';
-  $('vWeek').setAttribute('aria-pressed',String(v==='week'));$('vMonth').setAttribute('aria-pressed',String(v==='month'));$('vReg').setAttribute('aria-pressed',String(v==='regular'));$('vDebt').setAttribute('aria-pressed',String(v==='debt'));$('vSave').setAttribute('aria-pressed',String(v==='savings'));
+  $('weekView').hidden=v!=='week';$('monthView').hidden=v!=='month';$('yearView').hidden=v!=='year';$('regView').hidden=v!=='regular';$('debtView').hidden=v!=='debt';$('saveView').hidden=v!=='savings';
+  $('vWeek').setAttribute('aria-pressed',String(v==='week'));$('vMonth').setAttribute('aria-pressed',String(v==='month'));$('vYear').setAttribute('aria-pressed',String(v==='year'));$('vReg').setAttribute('aria-pressed',String(v==='regular'));$('vDebt').setAttribute('aria-pressed',String(v==='debt'));$('vSave').setAttribute('aria-pressed',String(v==='savings'));
   try{localStorage.setItem(LS+'-view',v)}catch(e){}
   if(v==='month'){curMonth=ymOf(parseIso(cur));renderMonth()}
+  else if(v==='year'){curYear=parseIso(cur).getFullYear();renderYear()}
   else if(v==='regular')renderRegulars();
   else if(v==='debt')renderDebt();
   else if(v==='savings')renderSavings();
   else{drafts={};renderAll()}
 }
 function renderWeek(){renderQuick();renderWeekbar();renderNote();renderCats();renderIncome();renderCatOptions();renderDayOptions();renderEntries();renderSummary()}
-function renderAll(){renderWeek();if(viewMode==='month')renderMonth();if(viewMode==='regular')renderRegulars();if(viewMode==='debt')renderDebt();if(viewMode==='savings')renderSavings()}
+function renderAll(){renderWeek();if(viewMode==='month')renderMonth();if(viewMode==='year')renderYear();if(viewMode==='regular')renderRegulars();if(viewMode==='debt')renderDebt();if(viewMode==='savings')renderSavings()}
 function go(ws){cur=ws;$('fErr').hidden=true;renderAll()}
 
 /* ---------- events ---------- */
@@ -1543,6 +1683,10 @@ let movedToStart=false;
 function toStart(){if(!movedToStart&&cur===THIS&&firstWeek()!==THIS){movedToStart=true;cur=firstWeek()}}
 $('vWeek').addEventListener('click',()=>setView('week'));
 $('vMonth').addEventListener('click',()=>setView('month'));
+$('vYear').addEventListener('click',()=>setView('year'));
+$('yPrev').addEventListener('click',()=>{curYear--;renderYear()});
+$('yNext').addEventListener('click',()=>{curYear++;renderYear()});
+$('yToday').addEventListener('click',()=>{curYear=parseIso(firstWeek()).getFullYear();renderYear()});
 $('vReg').addEventListener('click',()=>setView('regular'));
 $('vDebt').addEventListener('click',()=>setView('debt'));
 $('dbAdd').addEventListener('click',()=>setView('regular'));
@@ -1612,7 +1756,7 @@ const cachedS=lsGet(LS+'-settings');if(cachedS&&Array.isArray(cachedS.regulars))
 // changes made offline last time that never reached your account: send them once connected
 (lsGet(LS+'-pending')||[]).forEach(k=>{if(k==='settings'?cachedS:weeks[k])dirty[k]=true});
 toStart();renderAll();
-try{const v=localStorage.getItem(LS+'-view');if(v==='month'||v==='regular'||v==='debt'||v==='savings')setView(v)}catch(e){}
+try{const v=localStorage.getItem(LS+'-view');if(v==='month'||v==='year'||v==='regular'||v==='debt'||v==='savings')setView(v)}catch(e){}
 
 /* patchy signal: keep unsaved changes on the device and retry */
 function retryDirty(){if(mode!=='db')return;const ks=Object.keys(dirty).filter(k=>dirty[k]&&!saving[k]);if(ks.length)ks.forEach(k=>flush(k))}
@@ -1666,6 +1810,7 @@ function rerenderFromStore(){
   drafts={};
   if(viewMode==='regular'){if(!typing)renderRegulars();else regSummary()}
   else if(viewMode==='debt')renderDebt();
+  else if(viewMode==='year')renderYear();
   else if(viewMode==='savings')renderSavings();
   else if(!typing)renderAll();
   else{renderSummary();if(viewMode==='month')renderMonth()}
