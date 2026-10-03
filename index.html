@@ -1861,8 +1861,26 @@ function rerenderFromStore(){
 })();
 </script>
 
+<div class="toast updbar" id="updBar" role="status" hidden><span>Update ready</span><button type="button" id="updBtn">Tap to refresh</button></div>
+<style>.updbar{top:calc(12px + env(safe-area-inset-top, 0px));bottom:auto!important}.updbar button{color:var(--accent-soft);font-size:.95rem}</style>
 <script>
-if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{})})}
+(function(){
+  if(!('serviceWorker' in navigator))return;
+  const hadController=!!navigator.serviceWorker.controller; // false on the very first install
+  let shown=false;
+  const show=()=>{if(shown||!hadController)return;shown=true;document.getElementById('updBar').hidden=false};
+  document.getElementById('updBtn').addEventListener('click',()=>location.reload());
+  // a new version has taken over: the page on screen is the old one
+  navigator.serviceWorker.addEventListener('controllerchange',show);
+  window.addEventListener('load',()=>{
+    navigator.serviceWorker.register('sw.js').then(reg=>{
+      const check=()=>{reg.update().catch(()=>{})};
+      // iPhone keeps Home Screen apps paused in the background, so check whenever it comes back
+      document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')check()});
+      setInterval(check,30*60*1000);
+    }).catch(()=>{});
+  });
+})();
 try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}
 </script>
 </body>
