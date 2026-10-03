@@ -276,6 +276,50 @@ button,input,select{font:inherit;color:inherit}
 .ytrack .yspare{background:var(--good)}
 .ytrack .yover{background:var(--bad)}
 @media (max-width:560px){.yrow{grid-template-columns:4.2rem minmax(0,1fr)}.yrow .hv{grid-column:2;text-align:left}}
+/* statement import */
+.impline{display:flex}
+.impline .ghost{font-size:.85rem}
+.sheet{position:fixed;inset:0;z-index:40;background:rgba(10,12,18,.45);display:flex;align-items:flex-end;justify-content:center;padding:calc(env(safe-area-inset-top, 0px) + 24px) 0 0}
+.sheet-card{background:var(--surface);color:var(--ink);width:100%;max-width:720px;max-height:100%;border-radius:16px 16px 0 0;display:flex;flex-direction:column;gap:10px;padding:18px 18px calc(14px + env(safe-area-inset-bottom, 0px));box-shadow:0 -10px 40px rgba(0,0,0,.25)}
+.sheet-head{display:flex;justify-content:space-between;align-items:center}
+.sheet-head h2{font-family:var(--f-display);font-size:1.25rem;margin:0}
+.implist{overflow-y:auto;-webkit-overflow-scrolling:touch;display:flex;flex-direction:column;gap:2px;min-height:0;flex:1}
+.imp-wk{margin-top:10px}
+.imp-row{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,9.5rem);gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
+.imp-row.dim{opacity:.55}
+.imp-main{display:flex;flex-direction:column;min-width:0}
+.imp-desc{overflow-wrap:anywhere;font-weight:500}
+.imp-main small{font-size:.76rem;color:var(--muted)}
+.imp-amt{font-family:var(--f-num);font-variant-numeric:tabular-nums;white-space:nowrap}
+.imp-amt.in{color:var(--good)}
+.imp-row select{min-height:40px;font-size:.9rem}
+.imp-tick{display:flex;justify-content:flex-end}
+.imp-tick input{width:24px;height:24px;accent-color:var(--good)}
+.sheet-foot{display:flex;gap:8px}
+.sheet-foot .solid{flex:1;height:48px;font-size:1rem;border-radius:10px}
+.sheet-foot .solid[disabled]{opacity:.5}
+@media (min-width:760px){.sheet{align-items:center;padding:40px 16px}.sheet-card{border-radius:16px;max-height:85vh}}
+@media (max-width:560px){.imp-row{grid-template-columns:minmax(0,1fr) auto}.imp-row>:last-child{grid-column:1/-1}.imp-row.tickrow{grid-template-columns:minmax(0,1fr) auto 32px}.imp-row.tickrow>:last-child{grid-column:auto}}
+/* edit entry */
+.ebtn{background:transparent;border:0;padding:0;text-align:left;color:inherit;cursor:pointer;font:inherit}
+.ebtn.desc:hover{text-decoration:underline;text-decoration-color:var(--line)}
+.entry-edit{display:flex;flex-direction:column;gap:8px;padding:10px;margin:4px 0;border:1px solid var(--accent);border-radius:10px;background:color-mix(in srgb,var(--accent-soft) 25%,transparent)}
+.ee-row{display:grid;grid-template-columns:5.5rem minmax(0,1fr) 7rem;gap:8px}
+@media (max-width:560px){.ee-row{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.ee-row>:last-child{grid-column:1/-1}}
+/* trends */
+.trow{display:grid;grid-template-columns:minmax(0,1fr) 7.5rem minmax(0,9rem);gap:12px;align-items:center;padding:6px 0;border-bottom:1px solid var(--line)}
+.trow:last-child{border-bottom:0}
+.tname{display:flex;flex-direction:column;font-weight:500;min-width:0;overflow-wrap:anywhere}
+.tname small{font-weight:400;font-size:.76rem;color:var(--muted)}
+.tbars{display:flex;align-items:flex-end;gap:3px;height:34px}
+.tbars i{flex:1;background:var(--accent-soft);border-radius:2px 2px 0 0;display:block}
+.tbars i.now{background:var(--accent)}
+.tvals{display:flex;flex-direction:column;align-items:flex-end;text-align:right}
+.tvals b{font-family:var(--f-num);font-weight:500;font-variant-numeric:tabular-nums}
+.tvals small{font-size:.74rem;color:var(--muted)}
+.tchg{font-size:.74rem;font-weight:600}
+.tchg.up{color:var(--warn)}.tchg.down{color:var(--good)}
+@media (max-width:560px){.trow{grid-template-columns:minmax(0,1fr) 5.5rem}.trow .tvals{grid-column:1/-1;flex-direction:row;gap:10px;align-items:baseline;justify-content:flex-start}}
 /* data panel */
 .warnnote{border-color:var(--warn);background:color-mix(in srgb,var(--warn) 12%,transparent)}
 .databtns{display:flex;gap:8px;flex-wrap:wrap}
@@ -492,6 +536,7 @@ button,input,select{font:inherit;color:inherit}
     <section class="panel" aria-labelledby="hSpend">
       <h2 id="hSpend">Spending <small id="spentTot"></small></h2>
       <div class="quick" id="quick" hidden><span class="quick-lbl">Quick add</span><div class="quick-row" id="quickRow"></div></div>
+      <div class="impline"><button type="button" class="ghost" id="impBtn">Import bank statement</button><input type="file" id="impFile" accept=".csv,text/csv,text/plain,application/vnd.ms-excel" hidden></div>
       <form class="addform" id="addForm" novalidate>
         <label>Day<select class="field" id="fDay"></select></label>
         <label class="f-desc">What<input class="field" id="fDesc" placeholder="e.g. Tesco shop" autocomplete="off"></label>
@@ -556,12 +601,28 @@ button,input,select{font:inherit;color:inherit}
       <div class="wkcards" id="moWeekCards"></div>
     </section>
 
+    <section class="panel" aria-labelledby="hTrend">
+      <h2 id="hTrend">Spending trends <small>what you logged</small></h2>
+      <p class="hint" id="trendHint">This month against last month for each thing you log, with the last six months as bars.</p>
+      <div class="rows" id="moTrends"></div>
+    </section>
+
     <section class="panel" aria-labelledby="hMoCat">
       <h2 id="hMoCat">Categories <small id="moCatTot"></small></h2>
       <p class="hint">Spent against planned for each category, added up across the month.</p>
       <div class="rows mcats" id="moCats"></div>
     </section>
     <p class="foot" id="moFoot"></p>
+  </div>
+
+  <!-- STATEMENT IMPORT -->
+  <div class="sheet" id="impSheet" hidden role="dialog" aria-modal="true" aria-labelledby="hImp">
+    <div class="sheet-card">
+      <div class="sheet-head"><h2 id="hImp">Import statement</h2><button type="button" class="x" id="impClose" aria-label="Close">×</button></div>
+      <p class="hint" id="impSum"></p>
+      <div class="implist" id="impList"></div>
+      <div class="sheet-foot"><button type="button" class="solid" id="impApply">Add</button><button type="button" class="ghost" id="impCancel">Cancel</button></div>
+    </div>
   </div>
 
   <!-- YEAR -->
@@ -792,6 +853,12 @@ function makeDraft(ws){
 }
 function view(){const k=key(cur);return weeks[k]||drafts[k]||(drafts[k]=makeDraft(cur))}
 function weekDoc(ws){const k=key(ws);if(weeks[k])return weeks[k];if(ws===cur)return view();const d=drafts[k];if(d&&d.example)return d;return emptyWeek(ws)}
+function editWeek(ws,fn){
+  if(ws===cur)return edit(fn);
+  const k=key(ws);
+  if(!weeks[k]){weeks[k]=(drafts[k]&&!drafts[k].example)?drafts[k]:emptyWeek(ws);delete drafts[k];delete weeks[k].copiedFrom}
+  fn(weeks[k]);schedule(k);
+}
 function edit(fn){
   const k=key(cur);
   if(!weeks[k]){weeks[k]=view();delete drafts[k];delete weeks[k].copiedFrom;}
@@ -1055,6 +1122,28 @@ function renderDayOptions(){
   DAYS.forEach((d,i)=>s.appendChild(el('option',{value:String(i),text:d+' '+parseIso(addDays(cur,i)).getDate()})));
   s.value=prev!==null?prev:String(cur===THIS?TODAY_IDX:0);s.dataset.week=cur;
 }
+let editingEntry=null;
+function entryEditor(e,m){
+  const f=el('div',{cls:'entry-edit'});
+  const ds=el('select',{cls:'field',id:'ee-day','aria-label':'Day'});
+  DAYS.forEach((d,i)=>ds.appendChild(el('option',{value:String(i),text:d+' '+parseIso(addDays(cur,i)).getDate()})));ds.value=String(e.day);
+  const di=el('input',{cls:'field',id:'ee-desc','aria-label':'What',autocomplete:'off',placeholder:'What'});di.value=e.desc||'';
+  const cs=el('select',{cls:'field',id:'ee-cat','aria-label':'Category'});
+  m.budgets.forEach(b=>cs.appendChild(el('option',{value:b.id,text:b.name})));m.cats.forEach(c=>cs.appendChild(el('option',{value:c.id,text:c.name||'Unnamed'})));cs.appendChild(el('option',{value:'',text:'Other'}));
+  cs.value=[...cs.options].some(o=>o.value===e.cat)?e.cat:'';
+  const am=money('ee-amt',e.p,'Amount',()=>{});
+  const err=el('p',{cls:'formerr',hidden:''});
+  const save=el('button',{cls:'solid',type:'button',text:'Save'}),cancel=el('button',{cls:'ghost',type:'button',text:'Cancel'});
+  save.addEventListener('click',()=>{
+    const p=toP($('ee-amt').value);if(p<=0){err.textContent='Enter an amount above £0.';err.hidden=false;return}
+    edit(x=>{const t=x.entries.find(y=>y.id===e.id);if(t){t.day=+ds.value;t.desc=di.value.trim();t.cat=cs.value;t.p=p}});
+    editingEntry=null;renderEntries();renderSummary();toast('Saved');
+  });
+  cancel.addEventListener('click',()=>{editingEntry=null;renderEntries()});
+  f.append(di,el('div',{cls:'ee-row'},[ds,cs,am]),err,el('div',{cls:'databtns'},[save,cancel]));
+  setTimeout(()=>di.focus(),0);
+  return f;
+}
 function renderEntries(){
   const m=model(cur),w=m.w,box=$('entries');box.textContent='';
   const names={};m.budgets.forEach(b=>names[b.id]=b.name);w.cats.forEach(c=>names[c.id]=c.name||'Unnamed');
@@ -1068,7 +1157,11 @@ function renderEntries(){
       const known=e.cat in names;
       const rm=el('button',{cls:'x',type:'button','aria-label':'Delete '+(e.desc||'entry'),title:'Delete',text:'×'});
       rm.addEventListener('click',()=>{edit(x=>{x.entries=x.entries.filter(y=>y.id!==e.id)});renderEntries();renderSummary()});
-      g.appendChild(el('div',{cls:'entry'},[el('span',{cls:'desc',text:e.desc||'(no description)'}),el('span',{cls:'chip'+(known?'':' other'),text:known?names[e.cat]:'Other'}),el('span',{cls:'amt',text:fmt(e.p)}),rm]));
+      if(editingEntry===e.id){g.appendChild(entryEditor(e,m));return}
+      const eb=el('button',{cls:'desc ebtn',type:'button','aria-label':'Edit '+(e.desc||'entry')+', '+fmt(e.p)},[e.desc||'(no description)']);
+      eb.addEventListener('click',()=>{editingEntry=e.id;renderEntries()});
+      const ab=el('button',{cls:'amt ebtn',type:'button',tabindex:'-1','aria-hidden':'true',text:fmt(e.p)});ab.addEventListener('click',()=>{editingEntry=e.id;renderEntries()});
+      g.appendChild(el('div',{cls:'entry'},[eb,el('span',{cls:'chip'+(known?'':' other'),text:known?names[e.cat]:'Other'}),ab,rm]));
     });
     as.forEach(a=>g.appendChild(el('div',{cls:'entry'},[el('span',{cls:'desc',text:a.name}),el('span',{cls:'chip auto-chip',text:a.type==='saving'?'Saved':a.type==='debt'?'Debt paid':'Bill paid'}),el('span',{cls:'amt',text:fmt(a.p)}),el('span')])));
     box.appendChild(g);
@@ -1219,8 +1312,41 @@ function renderMonth(){
     open.addEventListener('click',()=>{setView('week');go(w.ws)});
     wc.appendChild(el('article',{cls:'wkc'+(isThis?' cur':''),'aria-label':'Week commencing '+dshort(w.ws)},[head,big,meter,lines,items,open]));
   });
+  renderTrends();
   $('moFoot').textContent='Weeks run Friday to Thursday, starting on payday, and each one counts in the month its Friday falls in. '+mname+' is made of the weeks starting '+
     md.starts.map(s=>parseIso(s).getDate()).join(', ').replace(/, (\d+)$/,' and $1')+' '+mname+', so it runs from '+dshort(startDs)+' to '+dshort(endDs)+'.';
+}
+
+/* ---------- spending trends ---------- */
+function loggedByName(ym){
+  const out={};
+  monthStarts(ym).forEach(ws=>{
+    const m=model(ws),names={};
+    m.budgets.forEach(b=>names[b.id]=b.name);m.cats.forEach(c=>names[c.id]=c.name||'One-off');
+    m.entries.forEach(e=>{const n=e.cat in names?names[e.cat]:'Other';out[n]=(out[n]||0)+e.p});
+  });
+  return out;
+}
+function renderTrends(){
+  const box=$('moTrends');box.textContent='';
+  const yms=[];for(let i=5;i>=0;i--)yms.push(shiftMonth(curMonth,-i));
+  const data=yms.map(loggedByName),now=data[5],prev=data[4];
+  const names=[...new Set(data.flatMap(d=>Object.keys(d)))].sort((a,b)=>(now[b]||0)-(now[a]||0)||(prev[b]||0)-(prev[a]||0));
+  const starts=monthStarts(curMonth),weeksSoFar=Math.max(1,starts.filter(ws=>ws<=THIS).length||starts.length);
+  const mname=m=>{const a=m.split('-').map(Number);return new Date(a[0],a[1]-1,1,12).toLocaleDateString('en-GB',{month:'short'})};
+  names.forEach(n=>{
+    const vals=data.map(d=>d[n]||0),mx=Math.max(1,...vals),a=now[n]||0,b=prev[n]||0;
+    let chg='';let cls='';
+    if(b&&a){const pc=Math.round((a-b)/b*100);chg=(pc>0?'▲ ':pc<0?'▼ ':'')+Math.abs(pc)+'%';cls=pc>0?'up':pc<0?'down':''}
+    else if(a&&!b)chg='new';
+    const bars=el('div',{cls:'tbars','aria-hidden':'true'},vals.map((v,i)=>el('i',{cls:i===5?'now':'',style:'height:'+Math.max(v?8:2,v/mx*100).toFixed(0)+'%',title:mname(yms[i])+': '+fmt(v)})));
+    box.appendChild(el('div',{cls:'trow'},[
+      el('div',{cls:'tname'},[n,el('small',{text:curMonth===ymOf(parseIso(firstWeek()))||curMonth>=THIS_YM?'about '+fmt(Math.round(a/weeksSoFar))+' a week so far':fmt(Math.round(a/starts.length))+' a week'})]),
+      bars,
+      el('div',{cls:'tvals'},[el('b',{text:fmt(a)}),el('small',{text:'last month '+(b?fmt(b):'–')}),chg?el('span',{cls:'tchg '+cls,text:chg}):null])
+    ]));
+  });
+  if(!names.length)box.appendChild(el('div',{cls:'empty',text:'Nothing logged yet. Trends appear once you’ve logged some spending.'}));
 }
 
 /* ---------- year view ---------- */
@@ -1672,7 +1798,7 @@ function setView(v){
 }
 function renderWeek(){renderQuick();renderWeekbar();renderNote();renderCats();renderIncome();renderCatOptions();renderDayOptions();renderEntries();renderSummary()}
 function renderAll(){renderWeek();if(viewMode==='month')renderMonth();if(viewMode==='year')renderYear();if(viewMode==='regular')renderRegulars();if(viewMode==='debt')renderDebt();if(viewMode==='savings')renderSavings()}
-function go(ws){cur=ws;$('fErr').hidden=true;renderAll()}
+function go(ws){cur=ws;editingEntry=null;$('fErr').hidden=true;renderAll()}
 
 /* ---------- events ---------- */
 $('prev').addEventListener('click',()=>go(addDays(cur,-7)));
@@ -1699,6 +1825,147 @@ $('mToday').addEventListener('click',()=>{curMonth=ymOf(parseIso(firstWeek()));r
 $('noteBtn').addEventListener('click',()=>{edit(w=>{w.entries=[];w.income=[];delete w.example});renderAll()});
 $('addCat').addEventListener('click',()=>{const id=uid();edit(w=>w.cats.push({id,name:'',p:0}));renderAll();const n=$('cn-'+id);if(n)n.focus()});
 $('addInc').addEventListener('click',()=>{const id=uid();edit(w=>w.income.push({id,label:'',p:0}));renderAll();const n=$('il-'+id);if(n)n.focus()});
+/* ---------- bank statement import ---------- */
+function parseCSV(text){
+  const rows=[];let row=[],f='',q=false;
+  for(let i=0;i<text.length;i++){const c=text[i];
+    if(q){if(c==='"'){if(text[i+1]==='"'){f+='"';i++}else q=false}else f+=c}
+    else if(c==='"')q=true;else if(c===','){row.push(f);f=''}
+    else if(c==='\n'||c==='\r'){if(c==='\r'&&text[i+1]==='\n')i++;row.push(f);rows.push(row);row=[];f=''}
+    else f+=c}
+  if(f||row.length){row.push(f);rows.push(row)}
+  return rows.map(r=>r.map(x=>x.replace(/^﻿/,'').trim()));
+}
+const MON={jan:0,feb:1,mar:2,apr:3,may:4,jun:5,jul:6,aug:7,sep:8,oct:9,nov:10,dec:11};
+function parseDate(s){
+  s=(s||'').trim();let m;
+  if((m=s.match(/^(\d{1,2})[ \-]([A-Za-z]{3})[A-Za-z]*[ \-](\d{2,4})$/))){const mo=MON[m[2].toLowerCase()];if(mo==null)return null;const y=+m[3]<100?2000+(+m[3]):+m[3];return iso(new Date(y,mo,+m[1],12))}
+  if((m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/))){const y=+m[3]<100?2000+(+m[3]):+m[3];return iso(new Date(y,+m[2]-1,+m[1],12))}
+  if((m=s.match(/^(\d{4})-(\d{2})-(\d{2})/)))return m[1]+'-'+m[2]+'-'+m[3];
+  return null;
+}
+function money2p(s){if(!s)return 0;const neg=/^\s*[-−]|\(/.test(s)||/[-−]\s*[£$€]/.test(s);const n=parseFloat(String(s).replace(/[^0-9.]/g,''));return isFinite(n)?Math.round(n*100)*(neg?-1:1):0}
+function parseStatement(text){
+  const rows=parseCSV(text);let h=-1;
+  for(let i=0;i<rows.length&&i<40;i++){const low=rows[i].map(x=>x.toLowerCase());if(low.some(x=>x==='date'||x==='transaction date')&&low.some(x=>/paid out|debit|amount|money out|paid in/.test(x))){h=i;break}}
+  if(h<0)return null;
+  const hd=rows[h].map(x=>x.toLowerCase()),ci=re=>hd.findIndex(x=>re.test(x));
+  const iD=ci(/^(transaction )?date$/),iDesc=ci(/description|details|narrative|merchant|^name|payee/),iType=ci(/type/),iOut=ci(/paid out|debit|money out/),iIn=ci(/paid in|credit|money in/),iAmt=ci(/^amount/);
+  const tx=[];
+  rows.slice(h+1).forEach(r=>{
+    if(r.length<2)return;const ds=parseDate(r[iD]);if(!ds)return;
+    let p;if(iOut>=0||iIn>=0){const o=Math.abs(money2p(r[iOut])),n=Math.abs(money2p(r[iIn]));p=o?-o:n}else p=money2p(r[iAmt]);
+    if(!p)return;
+    const desc=(r[iDesc]||'').replace(/\s+/g,' ').trim(),type=iType>=0?(r[iType]||''):'';
+    tx.push({ds,desc,type,p,src:ds+'|'+desc+'|'+p});
+  });
+  return tx;
+}
+const normKey=d=>String(d||'').toUpperCase().replace(/[^A-Z ]/g,' ').replace(/\s+/g,' ').trim().split(' ').filter(w=>w.length>1).slice(0,2).join(' ');
+const prettyDesc=d=>String(d||'').replace(/\*.*$/,'').replace(/\.(CO\.UK|COM)\b/ig,'').replace(/\b\d{3,}\b/g,'').replace(/\s+/g,' ').trim().toLowerCase().replace(/\b\w/g,c=>c.toUpperCase())||'Bank payment';
+const KEYWORDS=[
+  [/TESCO|SAINSBURY|ASDA|ALDI|LIDL|MORRISON|CO-?OP|WAITROSE|ICELAND|M&S|SPAR\b|FARMFOODS|ONE STOP|NISA|COSTCUTTER/,['food','grocer']],
+  [/SHELL|\bBP\b|ESSO|TEXACO|PETROL|FUEL|\bJET\b|GULF|MURCO|APPLEGREEN|MFG/,['fuel','petrol']],
+  [/BARBER|HAIR|SALON/,['hair']],
+  [/MCDONALD|KFC|BURGER|DOMINO|PIZZA|JUST EAT|JUSTEAT|DELIVEROO|UBER ?EATS|GREGGS|COSTA|STARBUCKS|SUBWAY|NANDO/,['takeaway','eating','food']]
+];
+function suggestCat(desc,opts){
+  const k=normKey(desc),rule=(settings.rules||{})[k];
+  if(rule==='skip')return 'skip';
+  if(rule!==undefined&&(rule===''||opts.some(o=>o.v===rule)))return rule;
+  const U=String(desc).toUpperCase();
+  for(const [re,words] of KEYWORDS)if(re.test(U)){const o=opts.find(o=>o.v&&words.some(w=>o.t.toLowerCase().includes(w)));if(o)return o.v}
+  return '';
+}
+const daysBetween=(a,b)=>Math.round((parseIso(a)-parseIso(b))/864e5);
+const nameHit=(name,desc)=>{const U=String(desc).toUpperCase();return String(name||'').toUpperCase().replace(/\(.*?\)/g,' ').split(/[^A-Z]+/).filter(w=>w.length>=4&&!['SAVINGS','LEFT','OVER','MEMBERSHIP','CONTRACT','PHONE','BILLS','WEEKLY','SHARE'].includes(w)).some(w=>U.includes(w))};
+let impRows=[];
+function buildImport(tx){
+  const since=settings.since||'0000';
+  const used=new Set(),rows=[];let older=0;
+  tx.sort((a,b)=>a.ds<b.ds?1:-1).forEach(t=>{
+    if(t.ds<since){older++;return}
+    const ws=iso(startOf(parseIso(t.ds))),m=model(ws);
+    const opts=m.budgets.map(b=>({v:b.id,t:b.name})).concat(m.cats.map(c=>({v:c.id,t:c.name||'One-off'})));
+    const row={t,ws,opts,action:'skip',note:''};
+    // already imported?
+    if((m.entries||[]).some(e=>e.src===t.src)){row.kind='already';row.note='Already added';rows.push(row);return}
+    if(t.p<0){
+      const amt=-t.p;
+      // regular payments: same amount within 3 days, or name in the description within 5 days
+      let best=null;
+      [addDays(ws,-7),ws,addDays(ws,7)].forEach(w2=>{const mm=w2===ws?m:model(w2);mm.autos.forEach(a=>{
+        if(used.has(a.pk))return;const dd=Math.abs(daysBetween(a.ds,t.ds));
+        const ok=(a.p===amt&&dd<=3)||(nameHit(a.name,t.desc)&&dd<=5&&(a.carry||Math.abs(a.p-amt)<=Math.max(100,a.p*0.25)));
+        if(ok&&(!best||dd<best.dd))best={a,dd,ws:w2};
+      })});
+      if(best){used.add(best.a.pk);row.kind='tick';row.auto=best.a;row.autoWs=best.ws;row.action=best.a.paid?'skip':'tick';row.note=best.a.paid?'Already ticked off: '+best.a.name:'Ticks off '+best.a.name+(best.a.p!==amt?' ('+fmt(best.a.p)+' planned)':'');rows.push(row);return}
+      // looks like something logged by hand already?
+      const dup=(m.entries||[]).find(e=>!e.src&&e.p===amt&&Math.abs(daysBetween(addDays(ws,e.day),t.ds))<=1);
+      row.kind='spend';row.action=dup?'skip':suggestCat(t.desc,opts);
+      if(dup)row.note='Looks like you already logged this';
+      rows.push(row);return;
+    }
+    // money in
+    const inc=m.inc.find(i=>i.regular&&!i.carry&&Math.abs(i.p-t.p)<=Math.max(100,i.p*0.05));
+    row.kind='income';row.action='skip';row.note=inc?inc.label+' (already planned)':'';
+    rows.push(row);
+  });
+  return {rows,older};
+}
+function openImport(tx){
+  const {rows,older}=buildImport(tx);impRows=rows;
+  const list=$('impList');list.textContent='';
+  if(!rows.length){$('impSum').textContent=older?'All '+older+' transactions are from before your planner started, so there’s nothing to add.':'No transactions found in that file.';$('impApply').hidden=true;$('impSheet').hidden=false;return}
+  $('impApply').hidden=false;
+  let lastWs=null;
+  rows.forEach((r,i)=>{
+    if(r.ws!==lastWs){lastWs=r.ws;list.appendChild(el('h3',{cls:'mini imp-wk',text:'Week of '+dlong(r.ws)}))}
+    let ctl;
+    if(r.kind==='tick'){ctl=el('label',{cls:'imp-tick'},[el('input',{type:'checkbox',id:'imp-'+i})]);const cb=ctl.firstChild;cb.checked=r.action==='tick';cb.disabled=r.auto.paid;cb.addEventListener('change',()=>{r.action=cb.checked?'tick':'skip';updImp()})}
+    else if(r.kind==='already'){ctl=el('span',{cls:'muted',style:'font-size:.8rem',text:'Skipped'})}
+    else{ctl=el('select',{cls:'field',id:'imp-'+i,'aria-label':'What to do with '+r.t.desc});
+      const o=r.kind==='income'?[['skip','Skip'],['income','Add as income']]:[['skip','Skip']].concat(r.opts.map(x=>[x.v,x.t]),[['','Other']]);
+      o.forEach(([v,t])=>ctl.appendChild(el('option',{value:v,text:t})));ctl.value=[...ctl.options].some(x=>x.value===r.action)?r.action:'';r.action=ctl.value;
+      ctl.addEventListener('change',()=>{r.action=ctl.value;r.changed=true;updImp()})}
+    list.appendChild(el('div',{cls:'imp-row'+(r.kind==='tick'?' tickrow':'')+(r.kind==='already'||(r.kind==='tick'&&r.auto.paid)?' dim':'')},[
+      el('div',{cls:'imp-main'},[el('span',{cls:'imp-desc',text:prettyDesc(r.t.desc)}),el('small',{text:parseIso(r.t.ds).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})+(r.note?' · '+r.note:'')})]),
+      el('span',{cls:'imp-amt'+(r.t.p>0?' in':''),text:(r.t.p>0?'+':'')+fmt(Math.abs(r.t.p))}),ctl]));
+  });
+  $('impSum').textContent=rows.length+' transactions'+(older?' ('+older+' older ones from before your planner started were left out)':'')+'. Bills and savings are matched for you; check the categories, then tap Add.';
+  updImp();$('impSheet').hidden=false;document.body.style.overflow='hidden';
+}
+function updImp(){
+  const n=impRows.filter(r=>r.kind==='tick'&&r.action==='tick').length,s=impRows.filter(r=>(r.kind==='spend'&&r.action!=='skip')||(r.kind==='income'&&r.action==='income')).length;
+  $('impApply').textContent=n||s?'Add '+(s?s+' item'+(s===1?'':'s'):'')+(n&&s?' and ':'')+(n?'tick off '+n:''):'Nothing to add';
+  $('impApply').disabled=!(n||s);
+}
+function closeImport(){$('impSheet').hidden=true;document.body.style.overflow='';impRows=[];$('impFile').value=''}
+$('impBtn').addEventListener('click',()=>$('impFile').click());
+$('impFile').addEventListener('change',()=>{
+  const f=$('impFile').files[0];if(!f)return;const r=new FileReader();
+  r.onload=()=>{const tx=parseStatement(String(r.result));if(!tx){toast('That file doesn’t look like a bank statement (CSV). Download it from Nationwide as CSV and try again.');$('impFile').value='';return}openImport(tx)};
+  r.readAsText(f);
+});
+$('impClose').addEventListener('click',closeImport);$('impCancel').addEventListener('click',closeImport);
+$('impApply').addEventListener('click',()=>{
+  let added=0,ticked=0;const rules=Object.assign({},settings.rules||{});let learned=false;
+  impRows.forEach(r=>{
+    if(r.kind==='tick'&&r.action==='tick'){editWeek(r.autoWs,x=>{x.paid=x.paid||{};x.paid[r.auto.pk]=true});ticked++}
+    else if(r.kind==='spend'){
+      const k=normKey(r.t.desc);
+      if(r.changed&&k){rules[k]=r.action;learned=true} // remember choices you change, for next time
+      if(r.action==='skip')return;
+      const day=daysBetween(r.t.ds,r.ws);
+      editWeek(r.ws,x=>x.entries.push({id:uid(),day,desc:prettyDesc(r.t.desc),cat:r.action,p:-r.t.p,src:r.t.src}));added++;
+    }
+    else if(r.kind==='income'&&r.action==='income'){editWeek(r.ws,x=>x.income.push({id:uid(),label:prettyDesc(r.t.desc),p:r.t.p,src:r.t.src}));added++}
+  });
+  if(learned)editRegs(st=>{st.rules=rules});
+  closeImport();dataVer++;drafts={};renderAll();
+  toast((added?'Added '+added:'')+(added&&ticked?', ':'')+(ticked?'ticked off '+ticked:'')+(added||ticked?'':'Nothing added'));
+});
+
 /* quick add */
 function budgetOptions(){
   const out=(settings.regulars||[]).filter(r=>r.type==='budget').map(r=>({v:'r:'+r.id,t:r.name||'Unnamed'}));
