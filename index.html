@@ -325,10 +325,18 @@ button,input,select{font:inherit;color:inherit}
 .balrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .balrow .money{flex:1 1 160px;max-width:240px}
 .balrow .solid{height:44px;border-radius:10px}
+.signbtn{border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:10px;height:44px;padding:0 12px;font-weight:600;font-size:.85rem;cursor:pointer;white-space:nowrap}
+.signbtn.neg{border-color:var(--bad);color:var(--bad);background:color-mix(in srgb,var(--bad) 10%,transparent)}
+.balproj{border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:4px;background:color-mix(in srgb,var(--accent-soft) 30%,transparent)}
+.balproj .bc-line span{min-width:0}
+.bc-line.total{border-top:1px solid var(--line);padding-top:6px;margin-top:2px;font-weight:600}
+.bc-line b.neg{color:var(--bad)}
+.balproj small{font-size:.78rem;color:var(--muted)}
+.bc-verdict.warn{color:var(--warn)}
 .balcheck{border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:3px;background:var(--bg);border-left:3px solid var(--line)}
 .balcheck.ok{border-left-color:var(--good)}.balcheck.low{border-left-color:var(--warn)}.balcheck.high{border-left-color:var(--accent)}
 .bc-line{display:flex;justify-content:space-between;gap:10px;font-size:.9rem}
-.bc-line b{font-family:var(--f-num);font-weight:500}
+.bc-line b{font-family:var(--f-num);font-weight:500;white-space:nowrap}
 .balcheck small{font-size:.74rem;color:var(--muted)}
 .bc-verdict{margin:4px 0 0;font-size:.88rem;font-weight:500}
 .balcheck.ok .bc-verdict{color:var(--good)}.balcheck.low .bc-verdict{color:var(--warn)}
@@ -535,10 +543,12 @@ button,input,select{font:inherit;color:inherit}
     <h2 id="hBal">Nationwide balance <small id="balLast"></small></h2>
     <p class="hint" id="balHint"></p>
     <div class="balrow">
-      <span class="money"><span>£</span><input class="field" id="balIn" inputmode="decimal" placeholder="0.00" autocomplete="off" aria-label="Current Nationwide balance"></span>
+      <button type="button" class="signbtn" id="balSign" aria-pressed="false" title="Tap if your account is overdrawn">In credit</button>
+      <span class="money"><span id="balCur">£</span><input class="field" id="balIn" inputmode="decimal" placeholder="0.00" autocomplete="off" aria-label="Current Nationwide balance"></span>
       <button type="button" class="solid" id="balSave">Save balance</button>
     </div>
     <p class="formerr" id="balErr" hidden></p>
+    <div class="balproj" id="balProj" hidden></div>
     <div class="balcheck" id="balCheck" hidden></div>
     <div class="balspark" id="balSpark" aria-hidden="true"></div>
     <details class="balhist" id="balHist" hidden><summary>History</summary><div id="balList"></div></details>
@@ -2024,6 +2034,21 @@ function renderBalance(){
     :isSun?'It’s Sunday: open your Nationwide app and type in your current balance.'
     :due?'Due: it’s been '+daysBetween(TODAY,last.d)+' days since your last balance.':'Next one due on Sunday. You can update it any time.';
   $('balSave').textContent=last&&last.d===TODAY?'Update today’s balance':'Save balance';
+  // link to this week's budget: what's still to go out before next payday
+  const pj=$('balProj');pj.textContent='';pj.hidden=!(last&&last.d>=THIS);
+  if(!pj.hidden){
+    const m=model(THIS),t=totals(m),end=addDays(THIS,6),next=addDays(THIS,7);
+    const due=m.autos.filter(a=>!a.paid&&a.ds>=last.d),late=m.autos.filter(a=>!a.paid&&a.ds<last.d);
+    const dueSum=due.reduce((x,a)=>x+a.p,0);
+    const budLeft=m.budgets.concat(m.cats).reduce((x,b)=>x+Math.max((b.p||0)-(t.byCat[b.id]||0),0),0);
+    const after=last.p-dueSum-budLeft,nextInc=model(next).inc.filter(i=>!i.carry).reduce((x,i)=>x+i.p,0);
+    pj.append(el('div',{cls:'bc-line'},[el('span',{text:'Balance on '+dshort(last.d)}),el('b',{text:fmt(last.p)})]));
+    if(dueSum)pj.append(el('div',{cls:'bc-line'},[el('span',{text:'Still to go out this week ('+due.map(a=>a.name).join(', ')+')'}),el('b',{text:'−'+fmt(dueSum)})]));
+    if(budLeft)pj.append(el('div',{cls:'bc-line'},[el('span',{text:'Left in this week’s budgets (Food, Fuel…)'}),el('b',{text:'−'+fmt(budLeft)})]));
+    pj.append(el('div',{cls:'bc-line total'},[el('span',{text:'Should be left by '+parseIso(end).toLocaleDateString('en-GB',{weekday:'long'})+' '+parseIso(end).getDate()}),el('b',{cls:after<0?'neg':'',text:fmt(Math.round(after))})]));
+    pj.append(el('small',{text:(after<0?'That’s less than £0 before payday, so go easy on spending. ':'')+(nextInc?'Then '+fmt(nextInc)+' comes in on '+dshort(next)+'.':'')}));
+    if(late.length)pj.append(el('p',{cls:'bc-verdict warn',text:'Not ticked off yet: '+late.map(a=>a.name+' '+fmt(a.p)).join(', ')+'. If it’s already come out of your account, tick it off; if not, it’ll still need paying.'}));
+  }
   // check against the planner
   const chk=$('balCheck'),c=balCheckFor(list.length-1,list);chk.textContent='';chk.hidden=!c;
   if(c){
@@ -2056,12 +2081,14 @@ function renderBalance(){
     hb.appendChild(el('div',{cls:'entry'},[el('span',{cls:'desc',text:dlong(x.d)}),el('span',{cls:'chip'+(c2&&Math.abs(c2.diff)>=100?' other':''),text:c2?(Math.abs(c2.diff)<100?'Matched':(c2.diff>0?'+':'−')+fmt(Math.abs(Math.round(c2.diff)))+' vs plan'):'First'}),el('span',{cls:'amt',text:fmt(x.p)}),rm]));
   });
 }
+let balNeg=false;
+$('balSign').addEventListener('click',()=>{balNeg=!balNeg;const b=$('balSign');b.setAttribute('aria-pressed',String(balNeg));b.textContent=balNeg?'Overdrawn':'In credit';b.classList.toggle('neg',balNeg);$('balCur').textContent=balNeg?'−£':'£'});
 $('balSave').addEventListener('click',()=>{
   const raw=$('balIn').value.trim(),err=$('balErr');
-  if(!raw||!/[0-9]/.test(raw)){err.textContent='Type your balance as shown in the Nationwide app, for example 512.30 (use a minus sign if you’re overdrawn).';err.hidden=false;return}
-  err.hidden=true;const p=toP(raw);
+  if(!raw||!/[0-9]/.test(raw)){err.textContent='Type your balance as shown in the Nationwide app, for example 512.30. If you’re overdrawn, tap In credit to switch it to Overdrawn first.';err.hidden=false;return}
+  err.hidden=true;let p=Math.abs(toP(raw));if(balNeg||/^[-−]/.test(raw))p=-p;
   editRegs(st=>{st.balances=(st.balances||[]).filter(x=>x.d!==TODAY);st.balances.push({d:TODAY,p})});
-  $('balIn').value='';renderBalance();toast('Balance saved: '+fmt(p));
+  $('balIn').value='';if(balNeg)$('balSign').click();renderBalance();toast('Balance saved: '+fmt(p));
 });
 $('balIn').addEventListener('keydown',e=>{if(e.key==='Enter')$('balSave').click()});
 
