@@ -320,6 +320,22 @@ button,input,select{font:inherit;color:inherit}
 .tchg{font-size:.74rem;font-weight:600}
 .tchg.up{color:var(--warn)}.tchg.down{color:var(--good)}
 @media (max-width:560px){.trow{grid-template-columns:minmax(0,1fr) 5.5rem}.trow .tvals{grid-column:1/-1;flex-direction:row;gap:10px;align-items:baseline;justify-content:flex-start}}
+/* bank balance */
+.balcard.due{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.balrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.balrow .money{flex:1 1 160px;max-width:240px}
+.balrow .solid{height:44px;border-radius:10px}
+.balcheck{border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:3px;background:var(--bg);border-left:3px solid var(--line)}
+.balcheck.ok{border-left-color:var(--good)}.balcheck.low{border-left-color:var(--warn)}.balcheck.high{border-left-color:var(--accent)}
+.bc-line{display:flex;justify-content:space-between;gap:10px;font-size:.9rem}
+.bc-line b{font-family:var(--f-num);font-weight:500}
+.balcheck small{font-size:.74rem;color:var(--muted)}
+.bc-verdict{margin:4px 0 0;font-size:.88rem;font-weight:500}
+.balcheck.ok .bc-verdict{color:var(--good)}.balcheck.low .bc-verdict{color:var(--warn)}
+.balspark{display:flex;flex-direction:column;gap:2px}
+.balspark svg{width:100%;height:60px;display:block}
+.balspark small{font-size:.76rem;color:var(--muted)}
+.balhist summary{cursor:pointer;color:var(--muted);font-size:.86rem;padding:4px 0}
 /* data panel */
 .warnnote{border-color:var(--warn);background:color-mix(in srgb,var(--warn) 12%,transparent)}
 .databtns{display:flex;gap:8px;flex-wrap:wrap}
@@ -513,6 +529,19 @@ button,input,select{font:inherit;color:inherit}
         <span id="lgOver" hidden><b style="background:var(--bad)"></b>Over income</span>
       </div>
     </div>
+  </section>
+
+  <section class="panel balcard" id="balCard" aria-labelledby="hBal">
+    <h2 id="hBal">Nationwide balance <small id="balLast"></small></h2>
+    <p class="hint" id="balHint"></p>
+    <div class="balrow">
+      <span class="money"><span>£</span><input class="field" id="balIn" inputmode="decimal" placeholder="0.00" autocomplete="off" aria-label="Current Nationwide balance"></span>
+      <button type="button" class="solid" id="balSave">Save balance</button>
+    </div>
+    <p class="formerr" id="balErr" hidden></p>
+    <div class="balcheck" id="balCheck" hidden></div>
+    <div class="balspark" id="balSpark" aria-hidden="true"></div>
+    <details class="balhist" id="balHist" hidden><summary>History</summary><div id="balList"></div></details>
   </section>
 
   <div class="grid">
@@ -1796,7 +1825,7 @@ function setView(v){
   else if(v==='savings')renderSavings();
   else{drafts={};renderAll()}
 }
-function renderWeek(){renderQuick();renderWeekbar();renderNote();renderCats();renderIncome();renderCatOptions();renderDayOptions();renderEntries();renderSummary()}
+function renderWeek(){renderBalance();renderQuick();renderWeekbar();renderNote();renderCats();renderIncome();renderCatOptions();renderDayOptions();renderEntries();renderSummary()}
 function renderAll(){renderWeek();if(viewMode==='month')renderMonth();if(viewMode==='year')renderYear();if(viewMode==='regular')renderRegulars();if(viewMode==='debt')renderDebt();if(viewMode==='savings')renderSavings()}
 function go(ws){cur=ws;editingEntry=null;$('fErr').hidden=true;renderAll()}
 
@@ -1965,6 +1994,76 @@ $('impApply').addEventListener('click',()=>{
   closeImport();dataVer++;drafts={};renderAll();
   toast((added?'Added '+added:'')+(added&&ticked?', ':'')+(ticked?'ticked off '+ticked:'')+(added||ticked?'':'Nothing added'));
 });
+
+/* ---------- weekly bank balance ---------- */
+const balances=()=>(settings.balances||[]).slice().sort((a,b)=>a.d<b.d?-1:1);
+// money the planner knows about between two dates (after d0, up to and including d1)
+function flowBetween(d0,d1){
+  let inc=0,out=0;
+  for(let ws=iso(startOf(parseIso(addDays(d0,1))));ws<=d1;ws=addDays(ws,7)){
+    const m=model(ws),inRange=ds=>ds>d0&&ds<=d1;
+    m.inc.forEach(i=>{if(i.carry)return;const ds=i.ds||ws;if(inRange(ds))inc+=i.p});
+    m.autos.forEach(a=>{if(a.paid&&inRange(a.ds))out+=a.p});
+    m.entries.forEach(e=>{if(inRange(addDays(ws,e.day)))out+=e.p});
+  }
+  return {inc,out};
+}
+function balCheckFor(i,list){
+  if(i<1)return null;
+  const a=list[i-1],b=list[i],f=flowBetween(a.d,b.d),exp=a.p+f.inc-f.out;
+  return {from:a,to:b,inc:f.inc,out:f.out,exp,diff:b.p-exp};
+}
+function renderBalance(){
+  const card=$('balCard');card.hidden=cur!==THIS;if(card.hidden)return;
+  const list=balances(),last=list[list.length-1],today=new Date(),isSun=today.getDay()===0;
+  const due=!last||daysBetween(TODAY,last.d)>=6||(isSun&&last.d<TODAY);
+  card.classList.toggle('due',due);
+  $('balLast').textContent=last?fmt(last.p)+' on '+dshort(last.d):'';
+  $('balHint').textContent=!last?'Every Sunday, check your Nationwide app and type in your current balance. The planner tracks it over time and checks it against what you’ve logged.'
+    :last.d===TODAY?'Saved for today. Change it below if you need to.'
+    :isSun?'It’s Sunday: open your Nationwide app and type in your current balance.'
+    :due?'Due: it’s been '+daysBetween(TODAY,last.d)+' days since your last balance.':'Next one due on Sunday. You can update it any time.';
+  $('balSave').textContent=last&&last.d===TODAY?'Update today’s balance':'Save balance';
+  // check against the planner
+  const chk=$('balCheck'),c=balCheckFor(list.length-1,list);chk.textContent='';chk.hidden=!c;
+  if(c){
+    const ok=Math.abs(c.diff)<100;
+    chk.className='balcheck '+(ok?'ok':c.diff<0?'low':'high');
+    chk.append(
+      el('div',{cls:'bc-line'},[el('span',{text:'Since '+dshort(c.from.d)+' your planner expected'}),el('b',{text:fmt(Math.round(c.exp))})]),
+      el('small',{text:fmt(c.from.p)+' + '+fmt(c.inc)+' in − '+fmt(c.out)+' out (ticked bills, savings and logged spending)'}),
+      el('div',{cls:'bc-line'},[el('span',{text:'Nationwide says'}),el('b',{text:fmt(c.to.p)})]),
+      el('p',{cls:'bc-verdict',text:ok?'✓ Matches your planner.':c.diff<0?fmt(-Math.round(c.diff))+' less than expected. Anything you forgot to log, or a bill you haven’t ticked off?':fmt(Math.round(c.diff))+' more than expected. Maybe something you logged hasn’t gone out yet, or money came in that isn’t in the planner.'}));
+  }
+  // trend
+  const sp=$('balSpark');sp.textContent='';
+  const recent=list.slice(-12);
+  if(recent.length>=2){
+    const vals=recent.map(x=>x.p),mn=Math.min(...vals),mx=Math.max(...vals),rng=Math.max(1,mx-mn);
+    const W=300,H=60,pts=recent.map((x,i)=>[(i/(recent.length-1))*(W-8)+4,H-4-((x.p-mn)/rng)*(H-8)]);
+    const NS='http://www.w3.org/2000/svg',svg=document.createElementNS(NS,'svg');svg.setAttribute('viewBox','0 0 '+W+' '+H);svg.setAttribute('preserveAspectRatio','none');
+    const pl=document.createElementNS(NS,'polyline');pl.setAttribute('points',pts.map(p=>p.map(v=>v.toFixed(1)).join(',')).join(' '));pl.setAttribute('fill','none');pl.setAttribute('stroke','var(--accent)');pl.setAttribute('stroke-width','2');pl.setAttribute('vector-effect','non-scaling-stroke');pl.setAttribute('stroke-linejoin','round');svg.appendChild(pl);
+    const lp=pts[pts.length-1],dot=document.createElementNS(NS,'circle');dot.setAttribute('cx',lp[0]);dot.setAttribute('cy',lp[1]);dot.setAttribute('r','3.5');dot.setAttribute('fill','var(--accent)');svg.appendChild(dot);
+    const first=recent[0],chg=last.p-first.p;
+    sp.append(svg,el('small',{text:(chg>=0?'Up ':'Down ')+fmt(Math.abs(chg))+' since '+dshort(first.d)}));
+  }
+  // history
+  const hb=$('balList');hb.textContent='';$('balHist').hidden=!list.length;
+  list.slice().reverse().forEach((x,ri)=>{
+    const i=list.length-1-ri,c2=balCheckFor(i,list);
+    const rm=el('button',{cls:'x',type:'button','aria-label':'Delete balance from '+dshort(x.d),text:'×'});
+    rm.addEventListener('click',()=>{editRegs(st=>{st.balances=(st.balances||[]).filter(y=>y.d!==x.d)});renderBalance()});
+    hb.appendChild(el('div',{cls:'entry'},[el('span',{cls:'desc',text:dlong(x.d)}),el('span',{cls:'chip'+(c2&&Math.abs(c2.diff)>=100?' other':''),text:c2?(Math.abs(c2.diff)<100?'Matched':(c2.diff>0?'+':'−')+fmt(Math.abs(Math.round(c2.diff)))+' vs plan'):'First'}),el('span',{cls:'amt',text:fmt(x.p)}),rm]));
+  });
+}
+$('balSave').addEventListener('click',()=>{
+  const raw=$('balIn').value.trim(),err=$('balErr');
+  if(!raw||!/[0-9]/.test(raw)){err.textContent='Type your balance as shown in the Nationwide app, for example 512.30 (use a minus sign if you’re overdrawn).';err.hidden=false;return}
+  err.hidden=true;const p=toP(raw);
+  editRegs(st=>{st.balances=(st.balances||[]).filter(x=>x.d!==TODAY);st.balances.push({d:TODAY,p})});
+  $('balIn').value='';renderBalance();toast('Balance saved: '+fmt(p));
+});
+$('balIn').addEventListener('keydown',e=>{if(e.key==='Enter')$('balSave').click()});
 
 /* quick add */
 function budgetOptions(){
