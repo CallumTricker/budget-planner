@@ -452,7 +452,11 @@ button,input,select{font:inherit;color:inherit}
   .summary,.panel,.checklist,.regsum{padding:16px;border-radius:12px}
   .legend{gap:10px;font-size:.74rem}
   /* log spending first on the week page */
-  #weekView .grid>section:nth-child(2){order:-1}
+  #weekView .grid>section:first-child{order:-1}
+  #themeTxt{display:none}
+  .brand .bl{display:none}
+  .themebtn{gap:0}
+  #vAcct{gap:6px}
   .grid{gap:14px}
   /* bigger tap targets, no zoom on focus */
   .field,select.field,input.field{font-size:16px;min-height:44px}
@@ -477,14 +481,48 @@ button,input,select{font:inherit;color:inherit}
   .reglist{gap:16px}
   .reg{padding-bottom:12px;border-bottom:1px solid var(--line)}
 }
+
+/* accounts, Monzo and statements */
+.spendacts{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.spendacts .solid,.spendacts .ghost{min-height:38px}
+.acctrows{display:flex;flex-direction:column;gap:2px;margin-top:-4px}
+.acctrow{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:10px;align-items:center;padding:7px 0;border-bottom:1px solid var(--line)}
+.acctrow:last-child{border-bottom:0}
+.acctrow .an{font-weight:600;min-width:0}
+.acctrow .an small{display:block;font-weight:400;font-size:.78rem;color:var(--muted)}
+.acctrow b{font-family:var(--f-num);font-weight:500;white-space:nowrap}
+.acctrow.tot{border-top:1px solid var(--line);border-bottom:0;margin-top:2px}
+.acctrow.tot .an{font-weight:500;color:var(--muted)}
+.pots .acctrow .an{font-weight:500}
+.ghost.sm{padding:4px 12px;font-size:.8rem}
+small.acct{display:block;font-size:.74rem;color:var(--muted);font-weight:400}
+.imp-desc small.acct{display:inline;margin-left:6px}
+.entry.moved .desc,.entry.moved .amt{color:var(--muted)}
+.steps{margin:0;padding-left:20px;font-size:.9rem;display:flex;flex-direction:column;gap:6px}
+.copybox{display:block;margin-top:6px;padding:8px 10px;background:var(--bg);border:1px solid var(--line);border-radius:8px;font-family:var(--f-num);font-size:.8rem;word-break:break-all;cursor:copy}
+.lbl{display:flex;flex-direction:column;gap:4px;font-size:.8rem;color:var(--muted);font-weight:600}
+.lbl .field{font-weight:400;color:var(--ink);font-size:15px}
+.pastebox{border:1px dashed var(--accent);border-radius:10px;padding:10px 12px}
+.choices{display:flex;flex-direction:column;gap:8px;margin-top:4px}
+.choice{border:1px solid var(--line);background:var(--bg);border-radius:12px;padding:14px 16px;font-size:1rem;font-weight:600;text-align:left;cursor:pointer}
+.choice:hover{border-color:var(--accent)}
+.spin{display:inline-block;width:14px;height:14px;border:2px solid var(--track);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;vertical-align:-2px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.panel h2 small.ok{color:var(--good);font-family:var(--f-body)}
+.mznew{border-style:solid}
+.chkhint{margin:6px 0 2px}
+#genCard h2{font-family:var(--f-display);font-size:1.25rem;margin:0}
+#genCard p{margin:0}
+#vAcct[aria-pressed="true"]{border-color:var(--accent);color:var(--accent)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 
 <div class="wrap">
   <div class="note warnnote" id="safariNote" hidden><p><b>You’re in Safari, not the Budget app.</b> Anything you add here stays in Safari and won’t show in the app on your Home Screen. Tap Share, then Add to Home Screen, and use that instead.</p></div>
   <header class="top">
-    <div class="brand"><i></i>Weekly Budget Planner</div>
+    <div class="brand"><i></i><span class="bl">Weekly </span>Budget<span class="bl"> Planner</span></div>
     <div class="seg" role="group" aria-label="View"><button type="button" id="vWeek" aria-pressed="true">Week</button><button type="button" id="vMonth" aria-pressed="false">Month</button><button type="button" id="vYear" aria-pressed="false">Year</button><button type="button" id="vReg" aria-pressed="false">Regular</button><button type="button" id="vDebt" aria-pressed="false">Debt</button><button type="button" id="vSave" aria-pressed="false">Savings</button></div>
+    <button type="button" class="themebtn" id="vAcct" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18M7 15h4"/></svg><span>Accounts</span></button>
     <button type="button" class="themebtn" id="themeBtn" aria-label="Switch to dark mode"><svg id="themeIco" viewBox="0 0 24 24" aria-hidden="true"></svg><span id="themeTxt">Dark</span></button>
     <div class="status" id="status" data-k="loading" role="status">Loading saved budget…</div>
     <div class="toast" id="toast" role="status" hidden><span id="toastText"></span><button type="button" id="toastUndo">Undo</button></div>
@@ -505,44 +543,46 @@ button,input,select{font:inherit;color:inherit}
 
   <div class="note" id="note" hidden><p id="noteText"></p><button class="solid" id="noteBtn" hidden>Clear examples</button></div>
 
-  <section class="checklist" id="checklist" aria-labelledby="hChk" hidden>
-    <div class="chkhead">
-      <h2 id="hChk">Tick off when it comes out</h2>
-      <span class="chkcount" id="chkCount"></span>
-    </div>
-    <div class="chkbar"><i id="chkBar"></i></div>
-    <div id="chkList"></div>
-  </section>
-
   <section class="summary" aria-label="Week summary">
     <div>
-      <div class="eyebrow">Left this week</div>
+      <div class="eyebrow">Left to spend this week</div>
       <div class="big" id="left">£0.00</div>
       <div class="leftsub" id="leftSub"></div>
     </div>
     <dl class="stats">
-      <div><dt>Income</dt><dd id="sInc">£0.00</dd></div>
-      <div><dt>Planned</dt><dd id="sPlan">£0.00</dd></div>
+      <div><dt>Coming in</dt><dd id="sInc">£0.00</dd></div>
+      <div><dt>Bills &amp; savings</dt><dd id="sPlan">£0.00</dd></div>
       <div><dt>Spent</dt><dd id="sSpent">£0.00</dd></div>
-      <div><dt id="sUnLbl">Unplanned</dt><dd id="sUn">£0.00</dd></div>
+      <div><dt id="sUnLbl">Left in budgets</dt><dd id="sUn">£0.00</dd></div>
     </dl>
     <div class="meterwrap">
-      <div class="meter" role="img" aria-label="Spending against income">
+      <div class="meter" role="img" aria-label="Bills and spending against income">
         <i class="seg-spent" id="mSpent" style="width:0"></i><i class="seg-over" id="mOver" style="width:0"></i><i class="seg-plan" id="mPlan" style="width:0"></i>
       </div>
       <div class="legend">
-        <span><b style="background:var(--accent)"></b>Spent</span>
-        <span><b style="background:var(--accent-soft)"></b>Still planned</span>
-        <span><b style="background:var(--track)"></b>Not yet planned</span>
-        <span id="lgOver" hidden><b style="background:var(--bad)"></b>Over income</span>
+        <span><b style="background:var(--accent)"></b>Bills &amp; spending</span>
+        <span><b style="background:var(--accent-soft)"></b>Still in budgets</span>
+        <span><b style="background:var(--track)"></b>Spare</span>
+        <span id="lgOver" hidden><b style="background:var(--bad)"></b>More than comes in</span>
       </div>
     </div>
   </section>
 
+  <section class="checklist" id="checklist" aria-labelledby="hChk" hidden>
+    <div class="chkhead">
+      <h2 id="hChk">Bills &amp; savings this week</h2>
+      <span class="chkcount" id="chkCount"></span>
+    </div>
+    <div class="chkbar"><i id="chkBar"></i></div>
+    <p class="hint chkhint" id="chkHint">Tick each one when it comes out of your account.</p>
+    <div id="chkList"></div>
+  </section>
+
   <section class="panel balcard" id="balCard" aria-labelledby="hBal">
-    <h2 id="hBal">Nationwide balance <small id="balLast"></small></h2>
+    <h2 id="hBal">Your money <small id="balLast"></small></h2>
+    <div class="acctrows" id="acctRows"></div>
     <p class="hint" id="balHint"></p>
-    <div class="balrow">
+    <div class="balrow" id="balRow">
       <button type="button" class="signbtn" id="balSign" aria-pressed="false" title="Tap if your account is overdrawn">In credit</button>
       <span class="money"><span id="balCur">£</span><input class="field" id="balIn" inputmode="decimal" placeholder="0.00" autocomplete="off" aria-label="Current Nationwide balance"></span>
       <button type="button" class="solid" id="balSave">Save balance</button>
@@ -555,6 +595,27 @@ button,input,select{font:inherit;color:inherit}
   </section>
 
   <div class="grid">
+    <section class="panel" aria-labelledby="hSpend">
+      <h2 id="hSpend">Spending <small id="spentTot"></small></h2>
+      <div class="quick" id="quick" hidden><span class="quick-lbl">Quick add</span><div class="quick-row" id="quickRow"></div></div>
+      <div class="note mznew" id="mzNew" hidden><p id="mzNewText"></p><button type="button" class="solid" id="mzNewBtn">Check and add</button></div>
+      <div class="spendacts">
+        <button type="button" class="solid" id="mzSyncBtn" hidden>Get Monzo transactions</button>
+        <button type="button" class="ghost" id="impBtn">Import statement</button>
+        <button type="button" class="ghost" id="addToggle" aria-expanded="false">+ Add by hand</button>
+        <input type="file" id="impFile" accept=".csv,.pdf,text/csv,text/plain,application/pdf,application/vnd.ms-excel" hidden>
+      </div>
+      <form class="addform" id="addForm" novalidate>
+        <label>Day<select class="field" id="fDay"></select></label>
+        <label class="f-desc">What<input class="field" id="fDesc" placeholder="e.g. Tesco shop" autocomplete="off"></label>
+        <label>Category<select class="field" id="fCat"></select></label>
+        <label>Amount<span class="money"><span>£</span><input class="field" id="fAmt" inputmode="decimal" placeholder="0.00" autocomplete="off"></span></label>
+        <button class="solid" type="submit">Add</button>
+      </form>
+      <p class="formerr" id="fErr" hidden></p>
+      <div class="days" id="days" aria-label="Spending by day"></div>
+      <div class="entries" id="entries"></div>
+    </section>
     <section class="panel" aria-labelledby="hBudget">
       <h2 id="hBudget">Budget <small id="planTot"></small></h2>
       <p class="hint" id="budgetHint">How much you plan to spend in each category this week.</p>
@@ -572,21 +633,6 @@ button,input,select{font:inherit;color:inherit}
       <button class="add" id="addInc">+ Add income</button>
     </section>
 
-    <section class="panel" aria-labelledby="hSpend">
-      <h2 id="hSpend">Spending <small id="spentTot"></small></h2>
-      <div class="quick" id="quick" hidden><span class="quick-lbl">Quick add</span><div class="quick-row" id="quickRow"></div></div>
-      <div class="impline"><button type="button" class="ghost" id="impBtn">Import bank statement</button><input type="file" id="impFile" accept=".csv,text/csv,text/plain,application/vnd.ms-excel" hidden></div>
-      <form class="addform" id="addForm" novalidate>
-        <label>Day<select class="field" id="fDay"></select></label>
-        <label class="f-desc">What<input class="field" id="fDesc" placeholder="e.g. Tesco shop" autocomplete="off"></label>
-        <label>Category<select class="field" id="fCat"></select></label>
-        <label>Amount<span class="money"><span>£</span><input class="field" id="fAmt" inputmode="decimal" placeholder="0.00" autocomplete="off"></span></label>
-        <button class="solid" type="submit">Add</button>
-      </form>
-      <p class="formerr" id="fErr" hidden></p>
-      <div class="days" id="days" aria-label="Spending by day"></div>
-      <div class="entries" id="entries"></div>
-    </section>
   </div>
 
   <section class="panel" aria-labelledby="hHist">
@@ -792,6 +838,34 @@ button,input,select{font:inherit;color:inherit}
     </div>
   </div>
 
+  <!-- ACCOUNTS -->
+  <div class="views" id="acctView" hidden>
+    <section class="weekbar">
+      <div class="title">
+        <div class="eyebrow">Where your spending comes from</div>
+        <h1>Accounts</h1>
+        <div class="muted">Connect Monzo and import statements, and your spending fills itself in. You check each one before it’s added.</div>
+      </div>
+    </section>
+    <section class="panel" id="mzPanel" aria-labelledby="hMz"></section>
+    <div class="grid">
+      <section class="panel" id="nwPanel" aria-labelledby="hNw"></section>
+      <section class="panel" id="ccPanel" aria-labelledby="hCc"></section>
+    </div>
+    <section class="panel" id="dataPanel" aria-labelledby="hData">
+      <h2 id="hData">Your data</h2>
+      <p class="hint" id="dataHint"></p>
+      <div class="databtns"><button type="button" class="solid" id="dCopy">Copy my data</button><button type="button" class="ghost" id="dSave" hidden>Save a backup file</button></div>
+      <textarea class="field datatext" id="dOut" rows="4" readonly hidden aria-label="Your data as text"></textarea>
+      <h3 class="mini" style="margin-top:8px">Bring data in</h3>
+      <textarea class="field datatext" id="dPaste" rows="4" placeholder="Paste copied data here" aria-label="Paste data to import"></textarea>
+      <div class="databtns"><button type="button" class="solid" id="dImport">Import</button><label class="ghost filebtn" id="dFileLbl" hidden>Open backup file<input type="file" id="dFile" accept="application/json,.json,text/plain" hidden></label></div>
+      <p class="hint" id="dMsg" hidden></p>
+    </section>
+  </div>
+
+  <div class="sheet" id="genSheet" hidden role="dialog" aria-modal="true"><div class="sheet-card" id="genCard"></div></div>
+
   <!-- REGULAR -->
   <div class="views" id="regView" hidden>
     <section class="weekbar">
@@ -811,16 +885,6 @@ button,input,select{font:inherit;color:inherit}
       <p class="foot" style="margin-top:12px">Averages: monthly payments are spread over 52 weeks a year, and 4-weekly payments over 4 weeks.</p>
     </section>
     <div class="regpanels" id="regPanels"></div>
-    <section class="panel" id="dataPanel" aria-labelledby="hData">
-      <h2 id="hData">Your data</h2>
-      <p class="hint" id="dataHint"></p>
-      <div class="databtns"><button type="button" class="solid" id="dCopy">Copy my data</button><button type="button" class="ghost" id="dSave" hidden>Save a backup file</button></div>
-      <textarea class="field datatext" id="dOut" rows="4" readonly hidden aria-label="Your data as text"></textarea>
-      <h3 class="mini" style="margin-top:8px">Bring data in</h3>
-      <textarea class="field datatext" id="dPaste" rows="4" placeholder="Paste copied data here" aria-label="Paste data to import"></textarea>
-      <div class="databtns"><button type="button" class="solid" id="dImport">Import</button><label class="ghost filebtn" id="dFileLbl" hidden>Open backup file<input type="file" id="dFile" accept="application/json,.json,text/plain" hidden></label></div>
-      <p class="hint" id="dMsg" hidden></p>
-    </section>
   </div>
 </div>
 
@@ -979,7 +1043,7 @@ function leftoverPaid(r){
 function model(ws,w){
   w=w||weekDoc(ws);
   const m={ws,w,inc:[],autos:[],budgets:[],cats:w.cats||[],entries:w.entries||[]};
-  (w.income||[]).forEach(i=>m.inc.push({id:i.id,label:i.label,p:i.p||0,manual:true}));
+  (w.income||[]).forEach(i=>m.inc.push({id:i.id,label:i.label,p:i.p||0,manual:true,acct:i.acct}));
   const regs=(!settings.since||ws>=settings.since)?(settings.regulars||[]):[];
   regs.forEach(r=>{
     const sched=isDebtCapped(r)?debtSchedule(r):null;
@@ -1099,6 +1163,7 @@ function renderAutos(m){
   $('chkCount').textContent=done+' of '+m.autos.length+' done';
   $('chkBar').style.width=(m.autos.length?done/m.autos.length*100:0)+'%';
   $('autoNote').textContent=done===m.autos.length?'All ticked off this week.':(m.autos.length-done)+' still to tick off at the top of the page.';
+  $('chkHint').textContent=done===m.autos.length?'All done for this week.':(mzOn()?'These tick themselves off when you add Monzo transactions or import a statement. You can tick them by hand too.':'Tick each one when it comes out of your account — or import a statement and they’ll tick themselves off.');
   m.autos.forEach(a=>{
     const box=el('span',{cls:'cbox','aria-hidden':'true'});box.innerHTML='<svg viewBox="0 0 24 24">'+CHECK+'</svg>';
     const kind=a.type==='saving'?'Saving':a.type==='debt'?'Debt payment':'Bill';
@@ -1187,9 +1252,10 @@ function renderEntries(){
   const m=model(cur),w=m.w,box=$('entries');box.textContent='';
   const names={};m.budgets.forEach(b=>names[b.id]=b.name);w.cats.forEach(c=>names[c.id]=c.name||'Unnamed');
   const paid=m.autos.filter(a=>a.paid);
-  if(!w.entries.length&&!paid.length){box.appendChild(el('div',{cls:'empty',text:'Nothing spent yet this week. Add each purchase above as you go.'}));return}
+  const mv=w.moves||[];
+  if(!w.entries.length&&!paid.length&&!mv.length){box.appendChild(el('div',{cls:'empty',text:mzOn()?'Nothing spent yet this week. Tap Get Monzo transactions to bring in what you’ve spent.':'Nothing spent yet this week. Add each purchase as you go, or import a statement.'}));return}
   for(let d=6;d>=0;d--){
-    const es=w.entries.filter(e=>e.day===d),as=paid.filter(a=>a.day===d);if(!es.length&&!as.length)continue;
+    const es=w.entries.filter(e=>e.day===d),as=paid.filter(a=>a.day===d),ms=mv.filter(x=>x.day===d);if(!es.length&&!as.length&&!ms.length)continue;
     const tot=es.reduce((s,e)=>s+e.p,0)+as.reduce((s,a)=>s+a.p,0);
     const g=el('div',{cls:'dgroup'},[el('h3',null,[dlong(addDays(cur,d)),el('span',{text:fmt(tot)})])]);
     es.forEach(e=>{
@@ -1197,12 +1263,15 @@ function renderEntries(){
       const rm=el('button',{cls:'x',type:'button','aria-label':'Delete '+(e.desc||'entry'),title:'Delete',text:'×'});
       rm.addEventListener('click',()=>{edit(x=>{x.entries=x.entries.filter(y=>y.id!==e.id)});renderEntries();renderSummary()});
       if(editingEntry===e.id){g.appendChild(entryEditor(e,m));return}
-      const eb=el('button',{cls:'desc ebtn',type:'button','aria-label':'Edit '+(e.desc||'entry')+', '+fmt(e.p)},[e.desc||'(no description)']);
+      const eb=el('button',{cls:'desc ebtn',type:'button','aria-label':'Edit '+(e.desc||'entry')+', '+fmt(e.p)},[e.desc||'(no description)',e.acct?el('small',{cls:'acct',text:ACCT_NAME(e.acct)}):null]);
       eb.addEventListener('click',()=>{editingEntry=e.id;renderEntries()});
       const ab=el('button',{cls:'amt ebtn',type:'button',tabindex:'-1','aria-hidden':'true',text:fmt(e.p)});ab.addEventListener('click',()=>{editingEntry=e.id;renderEntries()});
       g.appendChild(el('div',{cls:'entry'},[eb,el('span',{cls:'chip'+(known?'':' other'),text:known?names[e.cat]:'Other'}),ab,rm]));
     });
     as.forEach(a=>g.appendChild(el('div',{cls:'entry'},[el('span',{cls:'desc',text:a.name}),el('span',{cls:'chip auto-chip',text:a.type==='saving'?'Saved':a.type==='debt'?'Debt paid':'Bill paid'}),el('span',{cls:'amt',text:fmt(a.p)}),el('span')])));
+    ms.forEach(x=>{const rm=el('button',{cls:'x',type:'button','aria-label':'Remove '+x.desc,title:'Remove',text:'×'});
+      rm.addEventListener('click',()=>{edit(y=>{y.moves=(y.moves||[]).filter(z=>z.id!==x.id)});renderEntries()});
+      g.appendChild(el('div',{cls:'entry moved'},[el('span',{cls:'desc'},[x.desc,el('small',{cls:'acct',text:ACCT_NAME(x.acct)})]),el('span',{cls:'chip other',text:'Not spending'}),el('span',{cls:'amt',text:fmt(x.p)}),rm]))});
     box.appendChild(g);
   }
 }
@@ -1215,16 +1284,21 @@ function setBar(id,s,p,sfx){sfx=sfx||'';
 }
 function renderSummary(){
   const m=model(cur),t=totals(m);
-  const left=t.income-t.spent,un=t.income-t.planned,planLeft=Math.max(t.planned-t.spent,0);
+  // Left to spend = what comes in − every bill/saving due this week (paid or not) − what's been spent
+  const paidAutos=m.autos.filter(a=>a.paid).reduce((x,a)=>x+a.p,0),spentOnly=t.spent-paidAutos;
+  const budLeft=m.budgets.concat(m.cats).reduce((x,b)=>x+Math.max((b.p||0)-(t.byCat[b.id]||0),0),0);
+  const left=t.income-t.autoP-spentOnly,used=t.autoP+spentOnly;
   $('left').textContent=fmt(left);$('left').classList.toggle('neg',left<0);
-  $('leftSub').textContent=!t.income?'Add your income to see what’s left.':left<0?fmt(-left)+' more spent than came in this week.':fmt(planLeft)+' still planned · '+fmt(Math.max(left-planLeft,0))+' not yet planned';
-  $('sInc').textContent=fmt(t.income);$('sPlan').textContent=fmt(t.planned);$('sSpent').textContent=fmt(t.spent);
-  $('sUnLbl').textContent=un<0?'Over-planned':'Unplanned';$('sUn').textContent=fmt(Math.abs(un));$('sUn').classList.toggle('neg',un<0);
-  const base=Math.max(t.income,t.planned,t.spent,1),pct=v=>(Math.max(v,0)/base*100).toFixed(2)+'%';
-  $('mSpent').style.width=pct(Math.min(t.spent,t.income||t.spent));
-  $('mOver').style.width=pct(t.income?t.spent-t.income:0);
-  $('mPlan').style.width=pct(planLeft);
-  $('lgOver').hidden=!(t.income&&t.spent>t.income);
+  $('leftSub').textContent=!t.income?'Add your wages in Regular (or + Add one-off income below) to see what’s left.'
+    :left<0?'This week’s bills and spending are '+fmt(-left)+' more than comes in — that comes out of your balance.'
+    :(t.autoP?'After '+fmt(t.autoP)+' of bills and savings. ':'')+(budLeft?fmt(Math.min(budLeft,left))+' of it is set aside in your budgets.':'');
+  $('sInc').textContent=fmt(t.income);$('sPlan').textContent=fmt(t.autoP);$('sSpent').textContent=fmt(spentOnly);
+  $('sUnLbl').textContent='Left in budgets';$('sUn').textContent=fmt(budLeft);$('sUn').classList.remove('neg');
+  const base=Math.max(t.income,used+budLeft,1),pct=v=>(Math.max(v,0)/base*100).toFixed(2)+'%';
+  $('mSpent').style.width=pct(Math.min(used,t.income||used));
+  $('mOver').style.width=pct(t.income?used-t.income:0);
+  $('mPlan').style.width=pct(Math.min(budLeft,Math.max(t.income-used,0)));
+  $('lgOver').hidden=!(t.income&&used>t.income);
   $('planTot').textContent=fmt(t.planned);$('incTot').textContent=fmt(t.income);$('spentTot').textContent=fmt(t.spent);
   $('autoTot').textContent=fmt(t.autoP);
   m.budgets.forEach(b=>b.anyMonth?setBar(b.id,b.monthSpent,b.pot,' this month'):setBar(b.id,t.byCat[b.id]||0,b.p));
@@ -1825,7 +1899,7 @@ function drawSaveChart(){
 function setView(v){
   if(viewMode!==v)window.scrollTo(0,0);
   viewMode=v;
-  $('weekView').hidden=v!=='week';$('monthView').hidden=v!=='month';$('yearView').hidden=v!=='year';$('regView').hidden=v!=='regular';$('debtView').hidden=v!=='debt';$('saveView').hidden=v!=='savings';
+  $('weekView').hidden=v!=='week';$('monthView').hidden=v!=='month';$('yearView').hidden=v!=='year';$('regView').hidden=v!=='regular';$('debtView').hidden=v!=='debt';$('saveView').hidden=v!=='savings';$('acctView').hidden=v!=='accounts';$('vAcct').setAttribute('aria-pressed',String(v==='accounts'));
   $('vWeek').setAttribute('aria-pressed',String(v==='week'));$('vMonth').setAttribute('aria-pressed',String(v==='month'));$('vYear').setAttribute('aria-pressed',String(v==='year'));$('vReg').setAttribute('aria-pressed',String(v==='regular'));$('vDebt').setAttribute('aria-pressed',String(v==='debt'));$('vSave').setAttribute('aria-pressed',String(v==='savings'));
   try{localStorage.setItem(LS+'-view',v)}catch(e){}
   if(v==='month'){curMonth=ymOf(parseIso(cur));renderMonth()}
@@ -1833,9 +1907,10 @@ function setView(v){
   else if(v==='regular')renderRegulars();
   else if(v==='debt')renderDebt();
   else if(v==='savings')renderSavings();
+  else if(v==='accounts')renderAccounts();
   else{drafts={};renderAll()}
 }
-function renderWeek(){renderBalance();renderQuick();renderWeekbar();renderNote();renderCats();renderIncome();renderCatOptions();renderDayOptions();renderEntries();renderSummary()}
+function renderWeek(){renderBalance();renderSpendActs();renderQuick();renderWeekbar();renderNote();renderCats();renderIncome();renderCatOptions();renderDayOptions();renderEntries();renderSummary()}
 function renderAll(){renderWeek();if(viewMode==='month')renderMonth();if(viewMode==='year')renderYear();if(viewMode==='regular')renderRegulars();if(viewMode==='debt')renderDebt();if(viewMode==='savings')renderSavings()}
 function go(ws){cur=ws;editingEntry=null;$('fErr').hidden=true;renderAll()}
 
@@ -1888,6 +1963,7 @@ function parseStatement(text){
   const rows=parseCSV(text);let h=-1;
   for(let i=0;i<rows.length&&i<40;i++){const low=rows[i].map(x=>x.toLowerCase());if(low.some(x=>x==='date'||x==='transaction date')&&low.some(x=>/paid out|debit|amount|money out|paid in/.test(x))){h=i;break}}
   if(h<0)return null;
+  let bal=null;for(let i=0;i<h;i++){if(/^(account )?balance/i.test(rows[i][0]||'')&&rows[i][1]){bal=money2p(rows[i][1]);break}}
   const hd=rows[h].map(x=>x.toLowerCase()),ci=re=>hd.findIndex(x=>re.test(x));
   const iD=ci(/^(transaction )?date$/),iDesc=ci(/description|details|narrative|merchant|^name|payee/),iType=ci(/type/),iOut=ci(/paid out|debit|money out/),iIn=ci(/paid in|credit|money in/),iAmt=ci(/^amount/);
   const tx=[];
@@ -1898,6 +1974,7 @@ function parseStatement(text){
     const desc=(r[iDesc]||'').replace(/\s+/g,' ').trim(),type=iType>=0?(r[iType]||''):'';
     tx.push({ds,desc,type,p,src:ds+'|'+desc+'|'+p});
   });
+  tx.signed=iOut>=0||iIn>=0;tx.balance=bal;
   return tx;
 }
 const normKey=d=>String(d||'').toUpperCase().replace(/[^A-Z ]/g,' ').replace(/\s+/g,' ').trim().split(' ').filter(w=>w.length>1).slice(0,2).join(' ');
@@ -1906,21 +1983,28 @@ const KEYWORDS=[
   [/TESCO|SAINSBURY|ASDA|ALDI|LIDL|MORRISON|CO-?OP|WAITROSE|ICELAND|M&S|SPAR\b|FARMFOODS|ONE STOP|NISA|COSTCUTTER/,['food','grocer']],
   [/SHELL|\bBP\b|ESSO|TEXACO|PETROL|FUEL|\bJET\b|GULF|MURCO|APPLEGREEN|MFG/,['fuel','petrol']],
   [/BARBER|HAIR|SALON/,['hair']],
-  [/MCDONALD|KFC|BURGER|DOMINO|PIZZA|JUST EAT|JUSTEAT|DELIVEROO|UBER ?EATS|GREGGS|COSTA|STARBUCKS|SUBWAY|NANDO/,['takeaway','eating','food']]
+  [/MCDONALD|KFC|BURGER|DOMINO|PIZZA|JUST EAT|JUSTEAT|DELIVEROO|UBER ?EATS|GREGGS|COSTA|STARBUCKS|SUBWAY|NANDO/,['takeaway','eating','food']],
+  [/\bPUB\b|\bBAR\b|WETHERSPOON|CINEMA|ODEON|\bVUE\b|CINEWORLD|BOWLING|TICKETMASTER|NIGHTCLUB/,['going out','fun','entertain','social']]
 ];
-function suggestCat(desc,opts){
+const MCAT_WORDS={groceries:['food','grocer','shopping'],eating_out:['eating','takeaway','going out','lunch','food'],transport:['fuel','petrol','travel','transport','car'],
+  entertainment:['going out','fun','entertain','social'],shopping:['shopping','household','clothes'],personal_care:['personal','care','gym','hair'],holidays:['holiday'],bills:['bill'],gifts:['gift'],family:['family']};
+function suggestCat(desc,opts,mcat){
   const k=normKey(desc),rule=(settings.rules||{})[k];
   if(rule==='skip')return 'skip';
   if(rule!==undefined&&(rule===''||opts.some(o=>o.v===rule)))return rule;
   const U=String(desc).toUpperCase();
   for(const [re,words] of KEYWORDS)if(re.test(U)){const o=opts.find(o=>o.v&&words.some(w=>o.t.toLowerCase().includes(w)));if(o)return o.v}
+  const mw=MCAT_WORDS[mcat];if(mw)for(const w of mw){const o=opts.find(o=>o.v&&o.t.toLowerCase().includes(w));if(o)return o.v}
   return '';
 }
 const daysBetween=(a,b)=>Math.round((parseIso(a)-parseIso(b))/864e5);
 const nameHit=(name,desc)=>{const U=String(desc).toUpperCase();return String(name||'').toUpperCase().replace(/\(.*?\)/g,' ').split(/[^A-Z]+/).filter(w=>w.length>=4&&!['SAVINGS','LEFT','OVER','MEMBERSHIP','CONTRACT','PHONE','BILLS','WEEKLY','SHARE'].includes(w)).some(w=>U.includes(w))};
 let impRows=[];
+// "2026-10-28|SHELL|−4000" → "nationwide|2026-10-28|-4000" (Monzo transactions have their own ids)
+function stmtKey(src){const m=/^(card\|)?(\d{4}-\d{2}-\d{2})\|[\s\S]*\|(-?\d+)$/.exec(src||'');return m?(m[1]?'card':'bank')+'|'+m[2]+'|'+m[3]:null}
+function keyCount(w){const c={};['entries','income','moves'].forEach(f=>(w[f]||[]).forEach(e=>{const k=stmtKey(e.src);if(k)c[k]=(c[k]||0)+1}));(w.done||[]).forEach(x=>{const k=stmtKey(x);if(k)c[k]=(c[k]||0)+1});return c}
 function buildImport(tx){
-  const since=settings.since||'0000';
+  const since=settings.since||'0000',seenKey={};
   const used=new Set(),rows=[];let older=0;
   tx.sort((a,b)=>a.ds<b.ds?1:-1).forEach(t=>{
     if(t.ds<since){older++;return}
@@ -1928,7 +2012,10 @@ function buildImport(tx){
     const opts=m.budgets.map(b=>({v:b.id,t:b.name})).concat(m.cats.map(c=>({v:c.id,t:c.name||'One-off'})));
     const row={t,ws,opts,action:'skip',note:''};
     // already imported?
-    if((m.entries||[]).some(e=>e.src===t.src)){row.kind='already';row.note='Already added';rows.push(row);return}
+    if((m.entries||[]).some(e=>e.src===t.src)||(m.w.moves||[]).some(e=>e.src===t.src)||(m.w.done||[]).includes(t.src)){row.kind='already';row.note='Already added';rows.push(row);return}
+    // the same transaction from a different file (CSV vs PDF): same account, day and amount
+    const k=stmtKey(t.src);
+    if(k){const have=keyCount(m.w)[k]||0;seenKey[k]=(seenKey[k]||0)+1;if(seenKey[k]<=have){row.kind='already';row.note='Already imported from another file';rows.push(row);return}}
     if(t.p<0){
       const amt=-t.p;
       // regular payments: same amount within 3 days, or name in the description within 5 days
@@ -1938,24 +2025,29 @@ function buildImport(tx){
         const ok=(a.p===amt&&dd<=3)||(nameHit(a.name,t.desc)&&dd<=5&&(a.carry||Math.abs(a.p-amt)<=Math.max(100,a.p*0.25)));
         if(ok&&(!best||dd<best.dd))best={a,dd,ws:w2};
       })});
-      if(best){used.add(best.a.pk);row.kind='tick';row.auto=best.a;row.autoWs=best.ws;row.action=best.a.paid?'skip':'tick';row.note=best.a.paid?'Already ticked off: '+best.a.name:'Ticks off '+best.a.name+(best.a.p!==amt?' ('+fmt(best.a.p)+' planned)':'');rows.push(row);return}
+      if(best&&!(t.flag==='own'||t.flag==='cardpay')||best&&nameHit(best.a.name,t.desc)){used.add(best.a.pk);row.kind='tick';row.auto=best.a;row.autoWs=best.ws;row.action=best.a.paid?'skip':'tick';row.note=best.a.paid?'Already ticked off: '+best.a.name:'Ticks off '+best.a.name+(best.a.p!==amt?' ('+fmt(best.a.p)+' planned)':'');rows.push(row);return}
+      if(t.flag){row.kind='spend';row.flag=t.flag;row.action=t.flag==='cardpay'?'move':'skip';row.note=FLAG_NOTE(t);rows.push(row);return}
       // looks like something logged by hand already?
       const dup=(m.entries||[]).find(e=>!e.src&&e.p===amt&&Math.abs(daysBetween(addDays(ws,e.day),t.ds))<=1);
-      row.kind='spend';row.action=dup?'skip':suggestCat(t.desc,opts);
+      row.kind='spend';row.action=dup?'skip':suggestCat(t.desc,opts,t.mcat);
       if(dup)row.note='Looks like you already logged this';
       rows.push(row);return;
     }
     // money in
     const inc=m.inc.find(i=>i.regular&&!i.carry&&Math.abs(i.p-t.p)<=Math.max(100,i.p*0.05));
-    row.kind='income';row.action='skip';row.note=inc?inc.label+' (already planned)':'';
+    row.kind='income';row.action='skip';row.note=t.flag?FLAG_NOTE(t):inc?inc.label+' (already planned)':'';
     rows.push(row);
   });
   return {rows,older};
 }
-function openImport(tx){
+let impCtx={};
+function openImport(tx,ctx){
+  impCtx=ctx||{};
+  $('hImp').textContent=impCtx.title||'Import statement';
   const {rows,older}=buildImport(tx);impRows=rows;
   const list=$('impList');list.textContent='';
-  if(!rows.length){$('impSum').textContent=older?'All '+older+' transactions are from before your planner started, so there’s nothing to add.':'No transactions found in that file.';$('impApply').hidden=true;$('impSheet').hidden=false;return}
+  if(!rows.length){$('impSum').textContent=older?'All '+older+' transactions are from before your planner started, so there’s nothing to add.':impCtx.handled?'Everything here is already in your planner.':'No transactions found in that file.';$('impApply').hidden=true;$('impSheet').hidden=false;document.body.style.overflow='hidden';return}
+  if(rows.every(r=>r.kind==='already')){$('impSum').textContent='Everything in this '+(impCtx.from?impCtx.from+' ':'')+'file is already in your planner — nothing new to add.';$('impApply').hidden=true;$('impSheet').hidden=false;document.body.style.overflow='hidden';return}
   $('impApply').hidden=false;
   let lastWs=null;
   rows.forEach((r,i)=>{
@@ -1964,42 +2056,50 @@ function openImport(tx){
     if(r.kind==='tick'){ctl=el('label',{cls:'imp-tick'},[el('input',{type:'checkbox',id:'imp-'+i})]);const cb=ctl.firstChild;cb.checked=r.action==='tick';cb.disabled=r.auto.paid;cb.addEventListener('change',()=>{r.action=cb.checked?'tick':'skip';updImp()})}
     else if(r.kind==='already'){ctl=el('span',{cls:'muted',style:'font-size:.8rem',text:'Skipped'})}
     else{ctl=el('select',{cls:'field',id:'imp-'+i,'aria-label':'What to do with '+r.t.desc});
-      const o=r.kind==='income'?[['skip','Skip'],['income','Add as income']]:[['skip','Skip']].concat(r.opts.map(x=>[x.v,x.t]),[['','Other']]);
+      const o=r.kind==='income'?[['skip','Skip'],['income','Add as income']]:[['skip','Skip']].concat(r.flag==='cardpay'||r.flag==='own'?[['move','Not spending (just moving money)']]:[],r.opts.map(x=>[x.v,x.t]),[['','Other']]);
       o.forEach(([v,t])=>ctl.appendChild(el('option',{value:v,text:t})));ctl.value=[...ctl.options].some(x=>x.value===r.action)?r.action:'';r.action=ctl.value;
       ctl.addEventListener('change',()=>{r.action=ctl.value;r.changed=true;updImp()})}
     list.appendChild(el('div',{cls:'imp-row'+(r.kind==='tick'?' tickrow':'')+(r.kind==='already'||(r.kind==='tick'&&r.auto.paid)?' dim':'')},[
-      el('div',{cls:'imp-main'},[el('span',{cls:'imp-desc',text:prettyDesc(r.t.desc)}),el('small',{text:parseIso(r.t.ds).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})+(r.note?' · '+r.note:'')})]),
+      el('div',{cls:'imp-main'},[el('span',{cls:'imp-desc'},[prettyDesc(r.t.desc),r.t.acct&&impCtx.mixed?el('small',{cls:'acct',text:ACCT_NAME(r.t.acct)}):null]),el('small',{text:parseIso(r.t.ds).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})+(r.note?' · '+r.note:'')})]),
       el('span',{cls:'imp-amt'+(r.t.p>0?' in':''),text:(r.t.p>0?'+':'')+fmt(Math.abs(r.t.p))}),ctl]));
   });
-  $('impSum').textContent=rows.length+' transactions'+(older?' ('+older+' older ones from before your planner started were left out)':'')+'. Bills and savings are matched for you; check the categories, then tap Add.';
+  $('impSum').textContent=(impCtx.from?impCtx.from+': ':'')+rows.length+' transaction'+(rows.length===1?'':'s')+(older?' ('+older+' from before your planner started were left out)':'')+(impCtx.handled?' · '+impCtx.handled+' already in your planner':'')+'. Bills and savings are matched for you; check the categories, then tap Add.';
   updImp();$('impSheet').hidden=false;document.body.style.overflow='hidden';
 }
 function updImp(){
   const n=impRows.filter(r=>r.kind==='tick'&&r.action==='tick').length,s=impRows.filter(r=>(r.kind==='spend'&&r.action!=='skip')||(r.kind==='income'&&r.action==='income')).length;
-  $('impApply').textContent=n||s?'Add '+(s?s+' item'+(s===1?'':'s'):'')+(n&&s?' and ':'')+(n?'tick off '+n:''):'Nothing to add';
-  $('impApply').disabled=!(n||s);
+  const sk=impRows.filter(r=>r.kind!=='already'&&r.action==='skip').length;
+  $('impApply').textContent=n||s?'Add '+(s?s+' item'+(s===1?'':'s'):'')+(n&&s?' and ':'')+(n?'tick off '+n:''):sk?'Done — skip '+(sk===1?'it':'them'):'Nothing to add';
+  $('impApply').disabled=!(n||s||sk);
 }
 function closeImport(){$('impSheet').hidden=true;document.body.style.overflow='';impRows=[];$('impFile').value=''}
 $('impBtn').addEventListener('click',()=>$('impFile').click());
-$('impFile').addEventListener('change',()=>{
-  const f=$('impFile').files[0];if(!f)return;const r=new FileReader();
-  r.onload=()=>{const tx=parseStatement(String(r.result));if(!tx){toast('That file doesn’t look like a bank statement (CSV). Download it from Nationwide as CSV and try again.');$('impFile').value='';return}openImport(tx)};
-  r.readAsText(f);
-});
+$('impFile').addEventListener('change',()=>{const f=$('impFile').files[0];if(f)importFile(f);$('impFile').value=''});
 $('impClose').addEventListener('click',closeImport);$('impCancel').addEventListener('click',closeImport);
 $('impApply').addEventListener('click',()=>{
   let added=0,ticked=0;const rules=Object.assign({},settings.rules||{});let learned=false;
   impRows.forEach(r=>{
-    if(r.kind==='tick'&&r.action==='tick'){editWeek(r.autoWs,x=>{x.paid=x.paid||{};x.paid[r.auto.pk]=true});ticked++}
+    const acct=r.t.acct;
+    const markDone=()=>{if(r.t.src)editWeek(r.ws,x=>{x.done=x.done||[];if(!x.done.includes(r.t.src))x.done.push(r.t.src)})};
+    if(r.kind==='already')return;
+    if(r.kind==='tick'){
+      if(r.action==='tick'){editWeek(r.autoWs,x=>{x.paid=x.paid||{};x.paid[r.auto.pk]=true;if(acct){x.via=x.via||{};x.via[r.auto.pk]=acct}});ticked++}
+      markDone();
+    }
     else if(r.kind==='spend'){
       const k=normKey(r.t.desc);
-      if(r.changed&&k){rules[k]=r.action;learned=true} // remember choices you change, for next time
-      if(r.action==='skip')return;
+      if(r.changed&&k&&r.action!=='move'){rules[k]=r.action;learned=true} // remember choices you change, for next time
       const day=daysBetween(r.t.ds,r.ws);
-      editWeek(r.ws,x=>x.entries.push({id:uid(),day,desc:prettyDesc(r.t.desc),cat:r.action,p:-r.t.p,src:r.t.src}));added++;
+      if(r.action==='skip'){markDone();return}
+      if(r.action==='move'){editWeek(r.ws,x=>{(x.moves=x.moves||[]).push({id:uid(),day,desc:prettyDesc(r.t.desc),p:-r.t.p,acct,src:r.t.src})});return}
+      editWeek(r.ws,x=>x.entries.push(Object.assign({id:uid(),day,desc:prettyDesc(r.t.desc),cat:r.action,p:-r.t.p,src:r.t.src},acct?{acct}:{})));added++;
     }
-    else if(r.kind==='income'&&r.action==='income'){editWeek(r.ws,x=>x.income.push({id:uid(),label:prettyDesc(r.t.desc),p:r.t.p,src:r.t.src}));added++}
+    else if(r.kind==='income'){
+      if(r.action==='income'){editWeek(r.ws,x=>x.income.push(Object.assign({id:uid(),label:prettyDesc(r.t.desc),p:r.t.p,src:r.t.src},acct?{acct}:{})));added++}
+      else markDone();
+    }
   });
+  afterImport(impCtx);
   if(learned)editRegs(st=>{st.rules=rules});
   closeImport();dataVer++;drafts={};renderAll();
   toast((added?'Added '+added:'')+(added&&ticked?', ':'')+(ticked?'ticked off '+ticked:'')+(added||ticked?'':'Nothing added'));
@@ -2008,31 +2108,39 @@ $('impApply').addEventListener('click',()=>{
 /* ---------- weekly bank balance ---------- */
 const balances=()=>(settings.balances||[]).slice().sort((a,b)=>a.d<b.d?-1:1);
 // money the planner knows about between two dates (after d0, up to and including d1)
-function flowBetween(d0,d1){
+// all=true: Nationwide + Monzo together (transfers between them cancel out). Card purchases never leave a bank account.
+function flowBetween(d0,d1,all){
   let inc=0,out=0;
+  const counts=a=>all?a!=='card':(!a||a==='nationwide');
   for(let ws=iso(startOf(parseIso(addDays(d0,1))));ws<=d1;ws=addDays(ws,7)){
-    const m=model(ws),inRange=ds=>ds>d0&&ds<=d1;
-    m.inc.forEach(i=>{if(i.carry)return;const ds=i.ds||ws;if(inRange(ds))inc+=i.p});
-    m.autos.forEach(a=>{if(a.paid&&inRange(a.ds))out+=a.p});
-    m.entries.forEach(e=>{if(inRange(addDays(ws,e.day)))out+=e.p});
+    const m=model(ws),inRange=ds=>ds>d0&&ds<=d1,via=m.w.via||{};
+    m.inc.forEach(i=>{if(i.carry)return;const ds=i.ds||ws;if(inRange(ds)&&counts(i.acct))inc+=i.p});
+    m.autos.forEach(a=>{if(a.paid&&inRange(a.ds)&&counts(via[a.pk]))out+=a.p});
+    m.entries.forEach(e=>{if(inRange(addDays(ws,e.day))&&counts(e.acct))out+=e.p});
+    (m.w.moves||[]).forEach(e=>{if(inRange(addDays(ws,e.day))&&counts(e.acct))out+=e.p});
   }
   return {inc,out};
 }
+const cashOf=x=>x.p+(x.m!=null?x.m:0);
 function balCheckFor(i,list){
   if(i<1)return null;
-  const a=list[i-1],b=list[i],f=flowBetween(a.d,b.d),exp=a.p+f.inc-f.out;
-  return {from:a,to:b,inc:f.inc,out:f.out,exp,diff:b.p-exp};
+  const a=list[i-1],b=list[i],all=a.m!=null&&b.m!=null,f=flowBetween(a.d,b.d,all);
+  const start=all?cashOf(a):a.p,end=all?cashOf(b):b.p,exp=start+f.inc-f.out;
+  return {from:a,to:b,inc:f.inc,out:f.out,exp,diff:end-exp,all,start,end};
 }
 function renderBalance(){
   const card=$('balCard');card.hidden=cur!==THIS;if(card.hidden)return;
   const list=balances(),last=list[list.length-1],today=new Date(),isSun=today.getDay()===0;
   const due=!last||daysBetween(TODAY,last.d)>=6||(isSun&&last.d<TODAY);
   card.classList.toggle('due',due);
-  $('balLast').textContent=last?fmt(last.p)+' on '+dshort(last.d):'';
-  $('balHint').textContent=!last?'Every Sunday, check your Nationwide app and type in your current balance. The planner tracks it over time and checks it against what you’ve logged.'
+  $('balLast').textContent='';
+  renderAcctRows(last);
+  $('balRow').hidden=!(due||balOpen);
+  $('balHint').hidden=!(due||balOpen);
+  $('balHint').textContent=!last?'Every Sunday, type in your Nationwide balance'+(mzOn()?' (Monzo’s fills in by itself)':'')+'. The planner checks it against what you’ve spent, so you’ll know if anything was missed.'
     :last.d===TODAY?'Saved for today. Change it below if you need to.'
-    :isSun?'It’s Sunday: open your Nationwide app and type in your current balance.'
-    :due?'Due: it’s been '+daysBetween(TODAY,last.d)+' days since your last balance.':'Next one due on Sunday. You can update it any time.';
+    :isSun?'It’s Sunday: open your Nationwide app and type in your balance.'
+    :due?'Due: it’s been '+daysBetween(TODAY,last.d)+' days since your last Nationwide balance.':'Next one due on Sunday. You can update it any time.';
   $('balSave').textContent=last&&last.d===TODAY?'Update today’s balance':'Save balance';
   // link to this week's budget: what's still to go out before next payday
   const pj=$('balProj');pj.textContent='';pj.hidden=!(last&&last.d>=THIS);
@@ -2041,8 +2149,9 @@ function renderBalance(){
     const due=m.autos.filter(a=>!a.paid&&a.ds>=last.d),late=m.autos.filter(a=>!a.paid&&a.ds<last.d);
     const dueSum=due.reduce((x,a)=>x+a.p,0);
     const budLeft=m.budgets.concat(m.cats).reduce((x,b)=>x+Math.max((b.p||0)-(t.byCat[b.id]||0),0),0);
-    const after=last.p-dueSum-budLeft,nextInc=model(next).inc.filter(i=>!i.carry).reduce((x,i)=>x+i.p,0);
-    pj.append(el('div',{cls:'bc-line'},[el('span',{text:'Balance on '+dshort(last.d)}),el('b',{text:fmt(last.p)})]));
+    const both=last.m!=null,cash=cashOf(last);
+    const after=cash-dueSum-budLeft,nextInc=model(next).inc.filter(i=>!i.carry).reduce((x,i)=>x+i.p,0);
+    pj.append(el('div',{cls:'bc-line'},[el('span',{text:(both?'Nationwide + Monzo on ':'Balance on ')+dshort(last.d)}),el('b',{text:fmt(cash)})]));
     if(dueSum)pj.append(el('div',{cls:'bc-line'},[el('span',{text:'Still to go out this week ('+due.map(a=>a.name).join(', ')+')'}),el('b',{text:'−'+fmt(dueSum)})]));
     if(budLeft)pj.append(el('div',{cls:'bc-line'},[el('span',{text:'Left in this week’s budgets (Food, Fuel…)'}),el('b',{text:'−'+fmt(budLeft)})]));
     pj.append(el('div',{cls:'bc-line total'},[el('span',{text:'Should be left by '+parseIso(end).toLocaleDateString('en-GB',{weekday:'long'})+' '+parseIso(end).getDate()}),el('b',{cls:after<0?'neg':'',text:fmt(Math.round(after))})]));
@@ -2056,8 +2165,8 @@ function renderBalance(){
     chk.className='balcheck '+(ok?'ok':c.diff<0?'low':'high');
     chk.append(
       el('div',{cls:'bc-line'},[el('span',{text:'Since '+dshort(c.from.d)+' your planner expected'}),el('b',{text:fmt(Math.round(c.exp))})]),
-      el('small',{text:fmt(c.from.p)+' + '+fmt(c.inc)+' in − '+fmt(c.out)+' out (ticked bills, savings and logged spending)'}),
-      el('div',{cls:'bc-line'},[el('span',{text:'Nationwide says'}),el('b',{text:fmt(c.to.p)})]),
+      el('small',{text:fmt(c.start)+' + '+fmt(c.inc)+' in − '+fmt(c.out)+' out (ticked bills, savings and logged spending'+(c.all?', both accounts':'')+')'}),
+      el('div',{cls:'bc-line'},[el('span',{text:c.all?'Nationwide + Monzo say':'Nationwide says'}),el('b',{text:fmt(c.end)})]),
       el('p',{cls:'bc-verdict',text:ok?'✓ Matches your planner.':c.diff<0?fmt(-Math.round(c.diff))+' less than expected. Anything you forgot to log, or a bill you haven’t ticked off?':fmt(Math.round(c.diff))+' more than expected. Maybe something you logged hasn’t gone out yet, or money came in that isn’t in the planner.'}));
   }
   // trend
@@ -2078,17 +2187,18 @@ function renderBalance(){
     const i=list.length-1-ri,c2=balCheckFor(i,list);
     const rm=el('button',{cls:'x',type:'button','aria-label':'Delete balance from '+dshort(x.d),text:'×'});
     rm.addEventListener('click',()=>{editRegs(st=>{st.balances=(st.balances||[]).filter(y=>y.d!==x.d)});renderBalance()});
-    hb.appendChild(el('div',{cls:'entry'},[el('span',{cls:'desc',text:dlong(x.d)}),el('span',{cls:'chip'+(c2&&Math.abs(c2.diff)>=100?' other':''),text:c2?(Math.abs(c2.diff)<100?'Matched':(c2.diff>0?'+':'−')+fmt(Math.abs(Math.round(c2.diff)))+' vs plan'):'First'}),el('span',{cls:'amt',text:fmt(x.p)}),rm]));
+    hb.appendChild(el('div',{cls:'entry'},[el('span',{cls:'desc'},[dlong(x.d),x.m!=null?el('small',{cls:'acct',text:'+ Monzo '+fmt(x.m)}):null]),el('span',{cls:'chip'+(c2&&Math.abs(c2.diff)>=100?' other':''),text:c2?(Math.abs(c2.diff)<100?'Matched':(c2.diff>0?'+':'−')+fmt(Math.abs(Math.round(c2.diff)))+' vs plan'):'First'}),el('span',{cls:'amt',text:fmt(x.p)}),rm]));
   });
 }
 let balNeg=false;
 $('balSign').addEventListener('click',()=>{balNeg=!balNeg;const b=$('balSign');b.setAttribute('aria-pressed',String(balNeg));b.textContent=balNeg?'Overdrawn':'In credit';b.classList.toggle('neg',balNeg);$('balCur').textContent=balNeg?'−£':'£'});
-$('balSave').addEventListener('click',()=>{
+$('balSave').addEventListener('click',async()=>{
   const raw=$('balIn').value.trim(),err=$('balErr');
   if(!raw||!/[0-9]/.test(raw)){err.textContent='Type your balance as shown in the Nationwide app, for example 512.30. If you’re overdrawn, tap In credit to switch it to Overdrawn first.';err.hidden=false;return}
   err.hidden=true;let p=Math.abs(toP(raw));if(balNeg||/^[-−]/.test(raw))p=-p;
-  editRegs(st=>{st.balances=(st.balances||[]).filter(x=>x.d!==TODAY);st.balances.push({d:TODAY,p})});
-  $('balIn').value='';if(balNeg)$('balSign').click();renderBalance();toast('Balance saved: '+fmt(p));
+  const m=await mzFreshBalance(); // Monzo's balance at the same moment, so both accounts can be checked together
+  editRegs(st=>{st.balances=(st.balances||[]).filter(x=>x.d!==TODAY);st.balances.push(m!=null?{d:TODAY,p,m}:{d:TODAY,p})});
+  $('balIn').value='';if(balNeg)$('balSign').click();balOpen=false;renderBalance();toast('Balance saved: '+fmt(p)+(m!=null?' (Monzo '+fmt(m)+')':''));
 });
 $('balIn').addEventListener('keydown',e=>{if(e.key==='Enter')$('balSave').click()});
 
@@ -2130,6 +2240,363 @@ $('addForm').addEventListener('submit',ev=>{
   renderEntries();renderSummary();$('fDesc').focus();
 });
 
+/* ============================================================
+   Accounts: Monzo (live), Nationwide and credit card (statements)
+   Monzo sign-in details stay on this device only (never in backups).
+   ============================================================ */
+const DAYMS=864e5;
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const ACCT_NAME=a=>a==='monzo'?'Monzo':a==='nationwide'?'Nationwide':a==='card'?((settings.card&&settings.card.label)||'Credit card'):'';
+const ago=t=>{if(!t)return 'never';const m=Math.round((Date.now()-t)/6e4);if(m<1)return 'just now';if(m<60)return m+' min ago';const h=Math.round(m/60);if(h<24)return h+' hr ago';const d=Math.round(h/24);return d+' day'+(d>1?'s':'')+' ago'};
+let balOpen=false,formOpen=false;
+
+/* which transactions are just money moving between your own accounts */
+const CARD_DEFAULT='barclaycard|american express|\\bamex\\b|capital one|\\bmbna\\b|vanquis|aqua card|tesco bank|halifax credit|nationwide credit|credit card|newday|zopa card|virgin money cc|natwest credit|lloyds credit|hsbc credit|santander credit|\\bjaja\\b|marbles|fluid card';
+function cardRe(){const x=((settings.card&&settings.card.label)||'').trim().replace(/[.*+?^${}()|[\]\\]/g,'\\$&');return new RegExp(CARD_DEFAULT+(x?'|'+x:''),'i')}
+const OWN_RE=/\bmonzo\b|\bnationwide\b|own account|to a\/c|from a\/c|internal transfer|flex ?(regular )?saver/i;
+function flagFor(desc,p,acct){
+  if(acct==='card')return p>0?(/refund|return/i.test(desc)?'':'cardin'):'';
+  if(p<0&&cardRe().test(desc))return 'cardpay';
+  if(OWN_RE.test(desc)&&!(acct==='nationwide'&&/nationwide credit/i.test(desc)))return p<0?'own':'ownin';
+  return '';
+}
+function FLAG_NOTE(t){
+  return {pot:'Moved to a pot — tick it against a saving if it is one',potin:'Taken out of a pot',own:'Transfer to your own account — not spending',ownin:'Transfer from your own account',
+    cardpay:'Credit card repayment — your card purchases are counted instead',cardin:'Payment to your card — not spending'}[t.flag]||'';
+}
+
+/* ---------- Monzo ---------- */
+const MZK=LS+'-monzo',MZ_API='https://api.monzo.com',MZ_AUTH='https://auth.monzo.com/';
+let mz=Object.assign({from:'',clientId:'',clientSecret:'',accessToken:'',refreshToken:'',expiresAt:0,pendingState:'',approved:false,accountId:'',accountName:'',balance:null,pots:[],potNames:{},lastSync:0},lsGet(MZK)||{});
+const mzSave=()=>{try{localStorage.setItem(MZK,JSON.stringify(mz))}catch(e){}};
+const mzOn=()=>!!(mz.accessToken&&mz.approved);
+const mzRedirect=()=>location.origin+location.pathname;
+class MzErr extends Error{constructor(st,b){super((b&&b.message)||('Monzo said HTTP '+st));this.status=st;this.body=b||{}}}
+async function mzToken(params){
+  let r;try{r=await fetch(MZ_API+'/oauth2/token',{method:'POST',body:new URLSearchParams(params)})}catch(e){throw new MzErr(0,{message:'Couldn’t reach Monzo. Check your signal and try again.'})}
+  const j=await r.json().catch(()=>({}));if(!r.ok)throw new MzErr(r.status,j);
+  mz.accessToken=j.access_token;if(j.refresh_token)mz.refreshToken=j.refresh_token;mz.expiresAt=Date.now()+((j.expires_in||21600)-120)*1000;mzSave();return j;
+}
+const mzRefresh=()=>{if(!mz.refreshToken)throw new MzErr(401,{message:'Monzo sign-in has expired. Reconnect in Accounts.'});return mzToken({grant_type:'refresh_token',client_id:mz.clientId,client_secret:mz.clientSecret,refresh_token:mz.refreshToken})};
+async function mzApi(path,retried){
+  if(!mz.accessToken)throw new MzErr(401,{message:'Monzo isn’t connected.'});
+  if(Date.now()>mz.expiresAt&&mz.refreshToken&&!retried)await mzRefresh();
+  let r;try{r=await fetch(MZ_API+path,{headers:{Authorization:'Bearer '+mz.accessToken}})}
+  catch(e){throw new MzErr(0,{message:'Couldn’t reach Monzo from here. If this keeps happening, use Import statement with a CSV from the Monzo app instead.'})}
+  const j=await r.json().catch(()=>({}));
+  if(r.status===401&&!retried&&mz.refreshToken){await mzRefresh();return mzApi(path,true)}
+  if(!r.ok)throw new MzErr(r.status,j);return j;
+}
+async function mzAccount(){
+  const {accounts=[]}=await mzApi('/accounts');const open=accounts.filter(a=>!a.closed);
+  if(!open.length)throw new MzErr(404,{message:'No open Monzo accounts found.'});
+  const curA=open.find(a=>a.id===mz.accountId);if(curA)return curA;
+  const pick=open.length===1?open[0]:await chooseSheet('Which Monzo account?','Pick the one you spend from.',open.map(a=>({label:a.type==='uk_retail_joint'?'Joint account':a.type==='uk_retail'?'Current account':(a.description||'Account'),value:a})));
+  if(!pick)throw new MzErr(0,{message:'No Monzo account chosen.'});
+  mz.accountId=pick.id;mz.accountName=pick.type==='uk_retail_joint'?'Joint account':'Current account';mzSave();return pick;
+}
+function mzToTx(t){
+  if(t.decline_reason||!t.amount)return null;
+  const m=t.merchant&&typeof t.merchant==='object'?t.merchant:null,pot=t.metadata&&t.metadata.pot_id;
+  let desc=(m&&m.name)||(t.counterparty&&t.counterparty.name)||t.description||'Monzo payment',flag='';
+  if(pot||t.scheme==='uk_retail_pot'){const n=mz.potNames[pot]||'a pot';desc=t.amount<0?'To '+n:'From '+n;flag=t.amount<0?'pot':'potin'}
+  else flag=flagFor(desc+' '+(t.description||''),t.amount,'monzo');
+  return {ds:iso(new Date(t.created)),desc,type:t.category||'',p:t.amount,src:'monzo:'+t.id,acct:'monzo',flag,mcat:t.category||''};
+}
+function handledSrcs(){const s=new Set();Object.values(weeks).forEach(w=>{if(!w)return;['entries','income','moves'].forEach(k=>(w[k]||[]).forEach(e=>e.src&&s.add(e.src)));(w.done||[]).forEach(x=>s.add(x))});return s}
+let mzPending=[],mzBusy=false;
+async function mzSync(opts){
+  opts=opts||{};if(mzBusy)return;mzBusy=true;renderSpendActs();
+  try{
+    const acc=await mzAccount(),id=encodeURIComponent(acc.id);
+    const [bal,pots]=await Promise.all([mzApi('/balance?account_id='+id),mzApi('/pots?current_account_id='+id).catch(()=>({pots:[]}))]);
+    mz.balance={balance:bal.balance,total:bal.total_balance,spendToday:bal.spend_today,at:Date.now()};
+    (pots.pots||[]).forEach(p=>mz.potNames[p.id]=p.name);
+    mz.pots=(pots.pots||[]).filter(p=>!p.deleted).map(p=>({name:p.name,balance:p.balance,goal:p.goal_amount||0}));
+    // Monzo only gives full history in the first 5 minutes after sign-in; after that, the last 90 days
+    const now=Date.now(),start=parseIso([settings.since||'0000',mz.from||THIS].sort().pop()).getTime()-DAYMS;
+    let sinceMs=opts.full?start:Math.max(start,now-89*DAYMS,mz.lastSync?mz.lastSync-21*DAYMS:0);
+    let since=new Date(sinceMs).toISOString();const raw=[];
+    for(let page=0;page<60;page++){
+      let res;
+      try{res=await mzApi('/transactions?account_id='+id+'&since='+encodeURIComponent(since)+'&limit=100&expand[]=merchant')}
+      catch(e){if(e.status===403&&page===0&&sinceMs<now-89*DAYMS){sinceMs=now-89*DAYMS;since=new Date(sinceMs).toISOString();page--;continue}throw e}
+      const list=res.transactions||[];raw.push(...list);if(list.length<100)break;since=list[list.length-1].id;
+    }
+    mz.lastSync=Date.now();mzSave();
+    // only from the week Monzo was connected: earlier weeks were already logged by hand or from statements
+    const handled=handledSrcs(),start2=[settings.since||'0000',mz.from||THIS].sort().pop();
+    const all=raw.map(mzToTx).filter(Boolean),fresh=all.filter(t=>!handled.has(t.src)&&t.ds>=start2);
+    mzPending=fresh;
+    if(opts.review){if(fresh.length)openImport(fresh,{title:'New from Monzo',from:'Monzo',acct:'monzo'});else toast('Monzo is up to date — nothing new to add')}
+  }catch(e){
+    if(e.status===403&&/insufficient_permissions/.test(e.body.code||'')){mz.approved=false;mzSave();showApproval()}
+    else if(e.status===401){mz.accessToken='';mz.approved=false;mzSave();toast('Monzo sign-in has expired — reconnect in Accounts')}
+    else toast(e.message);
+  }finally{mzBusy=false;renderSpendActs();renderBalance();if(viewMode==='accounts')renderAccounts()}
+}
+async function mzFreshBalance(){
+  if(!mzOn())return null;
+  if(mz.balance&&Date.now()-mz.balance.at<30*6e4)return mz.balance.balance;
+  try{const acc=await mzAccount(),b=await mzApi('/balance?account_id='+encodeURIComponent(acc.id));mz.balance={balance:b.balance,total:b.total_balance,spendToday:b.spend_today,at:Date.now()};mzSave();return b.balance}
+  catch(e){return null}
+}
+function mzStart(){
+  const id=($('mzId')||{}).value,sec=($('mzSec')||{}).value;
+  if(id!=null){mz.clientId=id.trim();mz.clientSecret=(sec||'').trim()}
+  if(!mz.clientId||!mz.clientSecret){toast('Paste in your Client ID and secret first');return}
+  mz.pendingState=uid()+uid()+uid();mzSave();
+  location.href=MZ_AUTH+'?'+new URLSearchParams({client_id:mz.clientId,redirect_uri:mzRedirect(),response_type:'code',state:mz.pendingState});
+}
+async function mzFinish(code,state){
+  if(!mz.pendingState||state!==mz.pendingState){toast('That sign-in link doesn’t match — tap Connect Monzo again');return}
+  sheet('<h2>Connecting to Monzo…</h2><p class="hint"><span class="spin"></span> One moment.</p>');
+  try{await mzToken({grant_type:'authorization_code',client_id:mz.clientId,client_secret:mz.clientSecret,redirect_uri:mzRedirect(),code});
+    mz.pendingState='';mz.approved=false;mz.accountId='';mzSave();showApproval()}
+  catch(e){closeSheet();toast('Monzo said: '+e.message)}
+}
+let apprTimer=null;
+function showApproval(){
+  sheet('<h2>Approve in your Monzo app</h2><p>Monzo has sent you a notification. Open the Monzo app and allow access — this carries on by itself.</p><p class="hint"><span class="spin"></span> <span id="apprMsg">Waiting for you to approve…</span></p><div class="sheet-foot"><button type="button" class="ghost" data-act="closeSheet">Cancel</button></div>');
+  clearInterval(apprTimer);const t0=Date.now();let busy=false;
+  const tryIt=async()=>{if(busy)return;busy=true;
+    try{await mzApi('/accounts');clearInterval(apprTimer);mz.approved=true;if(!mz.from)mz.from=THIS;mzSave();setView('week');const m=$('apprMsg');if(m)m.textContent='Approved — fetching your transactions…';
+      await mzAccount();closeSheet();await mzSync({full:true,review:true})}
+    catch(e){if(e.status===403||e.status===401){if(Date.now()-t0>5*6e4){clearInterval(apprTimer);closeSheet();toast('Not approved yet — tap Connect Monzo to try again')}}else{clearInterval(apprTimer);closeSheet();toast(e.message)}}
+    finally{busy=false}};
+  apprTimer=setInterval(tryIt,3000);tryIt();
+}
+function mzDisconnect(){
+  if(mz.accessToken)fetch(MZ_API+'/oauth2/logout',{method:'POST',headers:{Authorization:'Bearer '+mz.accessToken}}).catch(()=>{});
+  Object.assign(mz,{accessToken:'',refreshToken:'',expiresAt:0,approved:false,accountId:'',balance:null,pots:[],lastSync:0,from:''});mzSave();mzPending=[];
+  renderAll();renderAccounts();toast('Monzo disconnected');
+}
+function mzPasted(text){
+  try{const u=new URL(String(text).trim()),c=u.searchParams.get('code');if(!c)throw 0;mzFinish(c,u.searchParams.get('state'))}
+  catch(e){toast('That isn’t the sign-in link — copy the whole address from Safari')}
+}
+function mzBoot(){
+  const q=new URLSearchParams(location.search),code=q.get('code'),state=q.get('state');
+  if(code||q.get('error'))history.replaceState(null,'',mzRedirect());
+  if(q.get('error')){toast('Monzo sign-in was cancelled');return}
+  if(code){
+    if(mz.pendingState&&state===mz.pendingState&&mz.clientSecret){mzFinish(code,state);return}
+    // The sign-in email opened Safari, which keeps separate storage from the Home Screen app
+    const link=mzRedirect()+'?'+q.toString();window.__mzLink=link;
+    sheet('<h2>One more step</h2><p>You’ve signed in to Monzo, but the link opened here in Safari instead of the Budget app on your Home Screen.</p><ol class="steps"><li>Tap <b>Copy sign-in link</b>.</li><li>Open Budget from your Home Screen → <b>Accounts</b> → paste it into “Signed in but ended up in Safari?”.</li></ol><p class="hint">Do it straight away — the link only works for a few minutes.</p><div class="sheet-foot"><button type="button" class="solid" data-act="copyLink">Copy sign-in link</button><button type="button" class="ghost" data-act="closeSheet">Close</button></div>');
+    return;
+  }
+  if(mzOn()&&Date.now()-mz.lastSync>15*6e4&&navigator.onLine!==false)mzSync({});
+}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&mzOn()&&Date.now()-mz.lastSync>15*6e4)mzSync({})});
+
+/* ---------- statements: CSV or PDF, from Nationwide, a credit card, or Monzo ---------- */
+const MONEY_RE=/^[-−]?£?[-−]?\d{1,3}(?:,\d{3})*\.\d{2}(?:\s?(?:CR|DR))?$/i;
+async function pdfLines(buf){
+  const pdfjs=await import('./lib/pdf.min.mjs');
+  pdfjs.GlobalWorkerOptions.workerSrc=new URL('lib/pdf.worker.min.mjs',location.href).href;
+  const doc=await pdfjs.getDocument({data:new Uint8Array(buf),isEvalSupported:false}).promise,lines=[];
+  for(let p=1;p<=doc.numPages;p++){
+    const tc=await (await doc.getPage(p)).getTextContent(),rows=[];
+    tc.items.filter(i=>i.str&&i.str.trim()).map(i=>({str:i.str.trim(),x:i.transform[4],y:i.transform[5],w:i.width||0}))
+      .sort((a,b)=>b.y-a.y||a.x-b.x).forEach(it=>{const r=rows.find(r=>Math.abs(r.y-it.y)<3);if(r)r.items.push(it);else rows.push({y:it.y,items:[it]})});
+    rows.forEach(r=>{r.items.sort((a,b)=>a.x-b.x);r.page=p;lines.push(r)});
+  }
+  return lines;
+}
+// Reads positioned text from a PDF statement. Works from the column headings (Date … Out/In … Balance) and
+// uses the running balance to double-check each amount's direction.
+function parseStatementLines(lines,card){
+  const all=lines.map(l=>l.items.map(i=>i.str).join(' ')).join('\n');
+  const yrs=[...all.matchAll(/\b(\d{1,2})\s+(jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*\s+(20\d\d)\b/gi)].map(m=>parseIso(parseDate(m[1]+' '+m[2].slice(0,3)+' '+m[3])));
+  const end=yrs.length?new Date(Math.max(...yrs)):new Date();
+  const withYear=(d,mo)=>{let x=new Date(end.getFullYear(),MON[mo.slice(0,3).toLowerCase()],+d,12);if(x-end>40*DAYMS)x.setFullYear(x.getFullYear()-1);return x};
+  const right=i=>i.x+i.w,DATE_RE=/^(\d{1,2})\s+(jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*\.?(?:\s+(\d{2,4}))?\b/i;
+  const SKIP=/balance (brought|carried) forward|balance from (previous )?statement|(opening|closing|start|end|starting) balance|previous balance/i;
+  const NOISE=/\btotal|summary|average|interest rate|overdraft (limit|rate)|\baer\b|\bear\b|arranged|statement (date|number|no)|sheet \d|page \d/i;
+  const headerCols=l=>{const hb=l.items.find(i=>/balance/i.test(i.str)),ho=l.items.find(i=>/(^|\s|£)(paid )?out\b|debit|withdrawn|payments/i.test(i.str)),hi=l.items.find(i=>/(^|\s|£)(paid )?in\b|credit|received|receipts/i.test(i.str)&&!/balance/i.test(i.str));
+    return hb&&(ho||hi)&&l.items.some(i=>/date/i.test(i.str))?{out:ho&&right(ho),in:hi&&right(hi),bal:right(hb)}:null};
+  const hp=new Set(lines.filter(headerCols).map(l=>l.page));
+  let cols=null,curDate=null,prevBal=null,pend=[],seen=false,lastPage=null;const out=[];
+  for(const l of lines){
+    const text=l.items.map(i=>i.str).join(' ').replace(/\s+/g,' ').trim();
+    if(l.page!==lastPage){lastPage=l.page;if(hp.has(l.page))seen=false;pend=[]}
+    const hc=headerCols(l);if(hc){cols=hc;seen=true;pend=[];continue}
+    if(hp.size&&!seen)continue;
+    if(NOISE.test(text)){pend=[];continue}
+    const toks=[];l.items.forEach(i=>{const parts=i.str.split(/\s{2,}/);if(parts.length===1)toks.push(i);else{const cw=i.w/parts.length;parts.forEach((p,k)=>toks.push({str:p.trim(),x:i.x+cw*k,w:cw}))}});
+    const money=toks.filter(t=>MONEY_RE.test(t.str));
+    const dm=text.match(DATE_RE);if(dm)curDate=dm[3]?parseIso(parseDate(dm[1]+' '+dm[2].slice(0,3)+' '+dm[3])):withYear(dm[1],dm[2]);
+    if(SKIP.test(text)){if(money.length)prevBal=money2p(money[money.length-1].str);pend=[];continue}
+    if(!money.length){if(text.length<80&&!/statement|continued|sort code|account (no|number)|bic|iban|building society|www\.|^date\b/i.test(text)){pend.push(dm?text.slice(dm[0].length).trim():text);if(pend.length>2)pend.shift()}continue}
+    if(card&&!cols){
+      if(!dm||!curDate){pend=[];continue}
+      const mm=money[money.length-1],v=Math.abs(money2p(mm.str)),cr=/\bCR\b|payment|refund|credit/i.test(text)||/^[-−]/.test(mm.str);
+      let d=text.slice(dm[0].length);money.forEach(x=>{d=d.replace(x.str,'')});d=d.replace(/^\s*\d{1,2}\s+[A-Za-z]{3}\b/,'').trim();
+      if(d)out.push({date:new Date(curDate),desc:d,p:cr?v:-v,bal:null});continue;
+    }
+    if(!curDate||(!hp.size&&money.length<2)){pend=[];continue}
+    let amt=null,bal=null;
+    if(cols){money.forEach(mm=>{const r=right(mm),v=Math.abs(money2p(mm.str));
+      const k=[['out',cols.out],['in',cols.in],['bal',cols.bal]].filter(c=>c[1]!=null).map(c=>[c[0],Math.abs(c[1]-r)]).sort((a,b)=>a[1]-b[1])[0][0];
+      if(k==='bal')bal=money2p(mm.str);else if(amt==null)amt=k==='out'?-v:v})}
+    else{bal=money.length>1?money2p(money[money.length-1].str):null;amt=Math.abs(money2p(money[0].str))}
+    if(amt==null){if(bal!=null)prevBal=bal;pend=[];continue}
+    if(bal!=null&&prevBal!=null){const diff=bal-prevBal;if(Math.abs(Math.abs(diff)-Math.abs(amt))<=1)amt=diff}
+    else if(!cols&&bal==null){pend=[];continue}
+    let d=text;if(dm)d=d.slice(dm[0].length);money.forEach(x=>{d=d.replace(x.str,'')});
+    out.push({date:new Date(curDate),desc:[...pend,d].join(' ').replace(/\s+/g,' ').trim(),p:amt,bal});
+    if(bal!=null)prevBal=bal;pend=[];
+  }
+  const tx=out.map(r=>{const ds=iso(r.date);return {ds,desc:r.desc,type:'',p:r.p,src:ds+'|'+r.desc+'|'+r.p,bal:r.bal}});
+  const lastB=out.filter(r=>r.bal!=null).pop();
+  tx.signed=true;tx.balance=lastB?lastB.bal:null;tx.balanceDate=lastB?iso(lastB.date):null;
+  if(card){const nb=all.match(/new balance[^\d£-]*(-?£?[\d,]+\.\d{2})/i);if(nb){tx.balance=Math.abs(money2p(nb[1]));tx.balanceDate=tx.length?tx.map(t=>t.ds).sort().pop():TODAY}}
+  return tx;
+}
+function parseMonzoCSV(rows){
+  const h=rows[0].map(x=>x.toLowerCase()),c=n=>h.indexOf(n);
+  const iId=c('transaction id'),iD=c('date'),iT=c('time'),iType=c('type'),iName=c('name'),iCat=c('category'),iAmt=c('amount'),iDesc=c('description');
+  const tx=[];
+  rows.slice(1).forEach(r=>{const ds=parseDate(r[iD]);if(!ds)return;const p=money2p(r[iAmt]);if(!p)return;
+    const type=(r[iType]||'').toLowerCase(),desc=r[iName]||r[iDesc]||'Monzo payment',pot=type.includes('pot');
+    tx.push({ds,desc:pot?(p<0?'To ':'From ')+desc:desc,type:r[iCat]||'',p,src:r[iId]?'monzo:'+r[iId]:ds+'|'+desc+'|'+p,acct:'monzo',
+      flag:pot?(p<0?'pot':'potin'):flagFor(desc+' '+(r[iDesc]||''),p,'monzo'),mcat:(r[iCat]||'').toLowerCase().replace(/\s+/g,'_')})});
+  return tx;
+}
+async function readText(buf){try{return new TextDecoder('utf-8',{fatal:true}).decode(buf)}catch(e){return new TextDecoder('windows-1252').decode(buf)}}
+async function importFile(f){
+  const buf=await f.arrayBuffer(),isPdf=/\.pdf$/i.test(f.name)||new Uint8Array(buf.slice(0,4)).join()==='37,80,68,70';
+  let text=null;
+  if(!isPdf){text=await readText(buf);const rows=parseCSV(text);
+    if(rows.length>1&&rows[0].some(x=>/^transaction id$/i.test(x))&&rows[0].some(x=>/^(emoji|category split|local amount)$/i.test(x))){
+      const tx=parseMonzoCSV(rows);return finishStatement(tx,'monzo')}}
+  const acct=await chooseSheet('Which account is this statement from?','So it’s counted the right way — card purchases count as spending, card repayments don’t.',
+    [{label:'🏦 Nationwide',value:'nationwide'},{label:'💳 '+((settings.card&&settings.card.label)||'Credit card'),value:'card'}]);
+  if(!acct)return;
+  let tx=null;
+  try{
+    if(isPdf){sheet('<h2>Reading your statement…</h2><p class="hint"><span class="spin"></span> '+esc(f.name)+'</p>');tx=parseStatementLines(await pdfLines(buf),acct==='card');closeSheet()}
+    else tx=parseStatement(text);
+  }catch(e){console.error(e);closeSheet()}
+  if(!tx||!tx.length){toast(isPdf?'Couldn’t find any transactions in that PDF. Try the CSV download instead, or send the file to Claude to adjust the reader.':'That file doesn’t look like a bank statement. Download it as CSV (or PDF) and try again.');return}
+  if(acct==='card'){
+    if(!tx.signed&&tx.filter(t=>t.p>0).length>tx.length/2)tx.forEach(t=>{t.p=-t.p}); // card CSVs often list purchases as positive
+    tx.forEach(t=>{t.src='card|'+t.src});if(tx.balance!=null)tx.balance=Math.abs(tx.balance);
+  }
+  tx.forEach(t=>{t.acct=acct;if(!t.flag)t.flag=flagFor(t.desc+' '+(t.type||''),t.p,acct)});
+  finishStatement(tx,acct);
+}
+function finishStatement(tx,acct){
+  const handled=handledSrcs(),fresh=tx.filter(t=>!handled.has(t.src)),n=tx.length-fresh.length;
+  const name=ACCT_NAME(acct);
+  let bdate=tx.balanceDate||null;
+  if(acct==='nationwide'&&tx.balance!=null&&!bdate)bdate=TODAY; // the CSV's "Account Balance" is today's
+  openImport(fresh,{title:name+' statement',from:name,acct,handled:n,balance:tx.balance,balanceDate:bdate});
+}
+function afterImport(ctx){
+  if(!ctx||!ctx.acct)return;
+  if(ctx.acct==='monzo')mzPending=[];
+  const now=Date.now();
+  editRegs(st=>{
+    if(ctx.acct==='nationwide'){st.nw=Object.assign(st.nw||{},{lastImport:now});
+      if(ctx.balance!=null&&ctx.balanceDate){const list=st.balances||[];const newer=list.some(x=>x.d>ctx.balanceDate);
+        if(!newer){st.balances=list.filter(x=>x.d!==ctx.balanceDate);const m=ctx.balanceDate===TODAY&&mz.balance&&now-mz.balance.at<30*6e4?mz.balance.balance:null;st.balances.push(m!=null?{d:ctx.balanceDate,p:ctx.balance,m}:{d:ctx.balanceDate,p:ctx.balance})}}}
+    if(ctx.acct==='card'){st.card=Object.assign(st.card||{},{lastImport:now});if(ctx.balance!=null){st.card.owed=ctx.balance;st.card.owedAt=ctx.balanceDate||TODAY}}
+  });
+  renderBalance();renderSpendActs();if(viewMode==='accounts')renderAccounts();
+}
+
+/* ---------- small sheets ---------- */
+function sheet(html){$('genCard').innerHTML=html;$('genSheet').hidden=false;document.body.style.overflow='hidden'}
+function closeSheet(){$('genSheet').hidden=true;$('genCard').innerHTML='';document.body.style.overflow='';clearInterval(apprTimer);if(window.__choose){const f=window.__choose;window.__choose=null;f(null)}}
+function chooseSheet(title,hint,opts){
+  return new Promise(res=>{
+    window.__choose=res;window.__chooseOpts=opts;
+    sheet('<div class="sheet-head"><h2>'+esc(title)+'</h2><button type="button" class="x" data-act="closeSheet" aria-label="Close">×</button></div>'+(hint?'<p class="hint" style="margin:0">'+esc(hint)+'</p>':'')+
+      '<div class="choices">'+opts.map((o,i)=>'<button type="button" class="choice" data-act="choose" data-i="'+i+'">'+esc(o.label)+'</button>').join('')+'</div>');
+  });
+}
+$('genSheet').addEventListener('click',e=>{
+  if(e.target===$('genSheet'))return closeSheet();
+  const b=e.target.closest('[data-act]');if(!b)return;const a=b.dataset.act;
+  if(a==='closeSheet')closeSheet();
+  else if(a==='choose'){const f=window.__choose,v=window.__chooseOpts[+b.dataset.i].value;window.__choose=null;closeSheet();f&&f(v)}
+  else if(a==='copyLink'){const t=window.__mzLink;(navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(()=>toast('Copied — now open Budget from your Home Screen'),()=>toast('Press and hold the address bar to copy it instead'))}
+});
+
+/* ---------- Your money: account rows on the week page ---------- */
+function renderAcctRows(last){
+  const box=$('acctRows');box.textContent='';
+  const row=(name,sub,val,btn)=>{const r=el('div',{cls:'acctrow'},[el('span',{cls:'an'},[name,sub?el('small',{text:sub}):null]),el('b',{cls:'num',text:val})]);if(btn)r.appendChild(btn);box.appendChild(r)};
+  const mk=(t,fn,cls)=>{const b=el('button',{type:'button',cls:cls||'ghost sm',text:t});b.addEventListener('click',fn);return b};
+  if(mzOn()&&mz.balance)row('Monzo','synced '+ago(mz.balance.at)+(mz.pots.length?' · '+fmt(mz.pots.reduce((x,p)=>x+p.balance,0))+' in pots':''),fmt(mz.balance.balance),mk(mzBusy?'…':'Sync',()=>mzSync({})));
+  else row('Monzo','not connected','—',mk('Connect',()=>setView('accounts')));
+  row('Nationwide',last?(last.d===TODAY?'today':dshort(last.d)):'not entered yet',last?fmt(last.p):'—',mk(balOpen?'Close':'Update',()=>{balOpen=!balOpen;renderBalance();if(balOpen)setTimeout(()=>$('balIn').focus(),0)}));
+  const cc=settings.card;
+  if(cc&&cc.owed!=null)row((cc.label||'Credit card')+' owed',cc.owedAt?'from statement, '+dshort(cc.owedAt):'',fmt(cc.owed),null);
+  if(mzOn()&&mz.balance&&last)box.appendChild(el('div',{cls:'acctrow tot'},[el('span',{cls:'an',text:'In your bank accounts'}),el('b',{cls:'num',text:fmt(mz.balance.balance+last.p)})]));
+}
+
+/* ---------- Spending: where transactions come from ---------- */
+function renderSpendActs(){
+  const on=mzOn();
+  $('mzSyncBtn').hidden=!on;$('mzSyncBtn').disabled=mzBusy;$('mzSyncBtn').textContent=mzBusy?'Getting Monzo transactions…':'Get Monzo transactions';
+  const showForm=!on||formOpen;
+  $('addForm').hidden=!showForm;$('addToggle').hidden=!on;$('addToggle').setAttribute('aria-expanded',String(showForm));$('addToggle').textContent=formOpen?'Hide add by hand':'+ Add by hand';
+  const n=mzPending.length;$('mzNew').hidden=!n||mzBusy;
+  if(n)$('mzNewText').textContent=n+' new Monzo transaction'+(n>1?'s':'')+' to check.';
+}
+$('mzSyncBtn').addEventListener('click',()=>{if(mzPending.length)openImport(mzPending,{title:'New from Monzo',from:'Monzo',acct:'monzo'});else mzSync({review:true})});
+$('mzNewBtn').addEventListener('click',()=>openImport(mzPending,{title:'New from Monzo',from:'Monzo',acct:'monzo'}));
+$('addToggle').addEventListener('click',()=>{formOpen=!formOpen;renderSpendActs();if(formOpen)$('fDesc').focus()});
+$('vAcct').addEventListener('click',()=>setView(viewMode==='accounts'?'week':'accounts'));
+
+/* ---------- Accounts screen ---------- */
+function renderAccounts(){
+  const on=mzOn(),half=mz.accessToken&&!mz.approved;
+  $('mzPanel').innerHTML=on?
+    '<h2 id="hMz">Monzo <small class="ok">● Connected</small></h2>'+
+    '<p class="hint">'+esc(mz.accountName||'Current account')+' · last synced '+ago(mz.lastSync)+'. '+(mz.refreshToken?'Stays signed in.':'Sign-in lasts about 6 hours — set your Monzo client to Confidential to stay signed in.')+'</p>'+
+    (mz.balance?'<div class="acctrow"><span class="an">Balance</span><b class="num">'+fmt(mz.balance.balance)+'</b></div>':'')+
+    (mz.pots.length?'<div class="pots">'+mz.pots.map(p=>'<div class="acctrow"><span class="an">'+esc(p.name)+(p.goal?'<small>'+Math.min(100,Math.round(p.balance/p.goal*100))+'% of '+fmt(p.goal)+'</small>':'')+'</span><b class="num">'+fmt(p.balance)+'</b></div>').join('')+'</div>':'')+
+    '<p class="hint">New Monzo transactions show up in Spending for you to check, then tap Add. Bills and savings tick themselves off.</p>'+
+    '<div class="databtns"><button type="button" class="solid" data-act="mzSync">Get Monzo transactions</button><button type="button" class="ghost" data-act="mzOff">Disconnect</button></div>'
+  :'<h2 id="hMz">Monzo <small>'+(half?'● Waiting for approval':'Not connected')+'</small></h2>'+
+    '<p class="hint">Bring in what you spend on your Monzo card automatically. It takes a few minutes, once — Monzo makes everyone set up their own private access.</p>'+
+    '<ol class="steps"><li>On a computer, go to <b>developers.monzo.com</b> and sign in (approve it in your Monzo app).</li>'+
+    '<li>Click <b>Clients → New OAuth Client</b>. Name it anything. Set <b>Confidential</b> to <b>True</b> and the <b>Redirect URL</b> to exactly:<code class="copybox" data-act="copyRedirect">'+esc(mzRedirect())+'</code></li>'+
+    '<li>Copy the <b>Client ID</b> and <b>Client secret</b> into the boxes below and tap Connect Monzo.</li></ol>'+
+    '<label class="lbl">Client ID<input class="field" id="mzId" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="oauth2client_…" value="'+esc(mz.clientId)+'"></label>'+
+    '<label class="lbl">Client secret<input class="field" id="mzSec" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="mnzconf.…" value="'+esc(mz.clientSecret)+'"></label>'+
+    '<div class="databtns"><button type="button" class="solid" data-act="mzGo">Connect Monzo</button></div>'+
+    (mz.pendingState?'<div class="pastebox"><b>Signed in but ended up in Safari?</b><p class="hint" style="margin:2px 0 6px">Paste the address Safari opened here.</p><div class="balrow"><input class="field" id="mzPaste" placeholder="https://…?code=…" autocapitalize="off" spellcheck="false"><button type="button" class="solid" data-act="mzPaste">Use link</button></div></div>':'')+
+    '<p class="hint">Your Monzo details stay on this phone only — they’re not in backups. Not made by or linked to Monzo.</p>';
+  const nw=settings.nw||{},nwB=balances().slice(-1)[0],nwN=countAcct('nationwide');
+  $('nwPanel').innerHTML='<h2 id="hNw">Nationwide '+(nw.lastImport?'<small class="ok">● '+nwN+' imported</small>':'')+'</h2>'+
+    '<p class="hint">'+(nw.lastImport?'Last statement imported '+ago(nw.lastImport)+'. ':'')+(nwB?'Balance '+fmt(nwB.p)+' on '+dshort(nwB.d)+'.':'')+'</p>'+
+    '<ol class="steps"><li>In the Nationwide Internet Bank, open your account and use <b>Download transactions</b> → CSV. Or download a <b>PDF statement</b>.</li><li>Tap Import statement and choose the file.</li></ol>'+
+    '<p class="hint">Transfers to Monzo and card repayments are spotted for you and not counted as spending.</p>'+
+    '<div class="databtns"><button type="button" class="solid" data-act="import">Import statement</button></div>';
+  const cc=settings.card||{},ccN=countAcct('card');
+  $('ccPanel').innerHTML='<h2 id="hCc">Credit card '+(cc.lastImport?'<small class="ok">● '+ccN+' imported</small>':'')+'</h2>'+
+    '<p class="hint">Card purchases count as spending in the week you make them. Paying the card off from Monzo or Nationwide doesn’t, so nothing’s counted twice.'+(cc.owed!=null?' Owed: '+fmt(cc.owed)+' on '+dshort(cc.owedAt)+'.':'')+'</p>'+
+    '<label class="lbl">Card name<input class="field" id="ccName" placeholder="e.g. Barclaycard" value="'+esc(cc.label||'')+'"></label>'+
+    '<p class="hint">Download a CSV from your card provider’s website (or a PDF statement), then tap Import statement.</p>'+
+    '<div class="databtns"><button type="button" class="solid" data-act="import">Import statement</button></div>';
+  const cn=$('ccName');cn.addEventListener('change',()=>{editRegs(st=>{st.card=Object.assign(st.card||{},{label:cn.value.trim()})});toast('Saved')});
+}
+const countAcct=a=>Object.values(weeks).reduce((n,w)=>n+((w&&w.entries)||[]).filter(e=>e.acct===a).length,0);
+$('acctView').addEventListener('click',e=>{
+  const b=e.target.closest('[data-act]');if(!b)return;const a=b.dataset.act;
+  if(a==='mzGo')mzStart();
+  else if(a==='mzSync'){setView('week');mzSync({review:true})}
+  else if(a==='mzOff'){if(confirm('Disconnect Monzo? Transactions you’ve already added stay in your planner.'))mzDisconnect()}
+  else if(a==='mzPaste'){const v=$('mzPaste').value;if(v)mzPasted(v);else if(navigator.clipboard)navigator.clipboard.readText().then(mzPasted,()=>toast('Paste the link into the box first'))}
+  else if(a==='import')$('impFile').click();
+  else if(a==='copyRedirect'){(navigator.clipboard?navigator.clipboard.writeText(mzRedirect()):Promise.reject()).then(()=>toast('Copied'),()=>toast('Press and hold to copy'))}
+});
+
 /* ---------- theme ---------- */
 const root=document.documentElement,hostTheme=root.getAttribute('data-theme');
 const MOON='<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>';
@@ -2149,7 +2616,8 @@ const cachedS=lsGet(LS+'-settings');if(cachedS&&Array.isArray(cachedS.regulars))
 // changes made offline last time that never reached your account: send them once connected
 (lsGet(LS+'-pending')||[]).forEach(k=>{if(k==='settings'?cachedS:weeks[k])dirty[k]=true});
 toStart();renderAll();
-try{const v=localStorage.getItem(LS+'-view');if(v==='month'||v==='year'||v==='regular'||v==='debt'||v==='savings')setView(v)}catch(e){}
+try{const v=localStorage.getItem(LS+'-view');if(v==='month'||v==='year'||v==='regular'||v==='debt'||v==='savings'||v==='accounts')setView(v)}catch(e){}
+mzBoot();
 
 /* patchy signal: keep unsaved changes on the device and retry */
 function retryDirty(){if(mode!=='db')return;const ks=Object.keys(dirty).filter(k=>dirty[k]&&!saving[k]);if(ks.length)ks.forEach(k=>flush(k))}
